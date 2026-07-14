@@ -1,0 +1,1258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ISTQB Foundation Level Reviewer</title>
+<script src="questions.js"></script>
+<style>
+  :root {
+    --primary: #1a237e;
+    --primary-light: #283593;
+    --accent: #1565c0;
+    --success: #2e7d32;
+    --danger: #c62828;
+    --warning: #e65100;
+    --bg: #f0f2f5;
+    --card: #ffffff;
+    --text: #1a1a2e;
+    --muted: #546e7a;
+    --border: #cfd8dc;
+    --gold: #f9a825;
+    --silver: #78909c;
+    --bronze: #795548;
+    --easy: #1b5e20;
+    --medium: #e65100;
+    --hard: #b71c1c;
+    --extreme: #4a148c;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+  .hidden { display: none !important; }
+
+  /* ===== HEADER ===== */
+  header { background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%); color: white; padding: 16px 24px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 2px 8px rgba(0,0,0,0.3); }
+  header h1 { font-size: 1.3rem; font-weight: 700; letter-spacing: 0.5px; }
+  .user-badge { display: flex; align-items: center; gap: 10px; font-size: 0.88rem; cursor: pointer; }
+  .user-badge:hover .user-badge-name { background: rgba(255,255,255,0.25); }
+  .user-badge-name { background: rgba(255,255,255,0.15); padding: 4px 12px; border-radius: 20px; transition: background 0.2s; }
+  .header-avatar { width: 36px; height: 36px; border-radius: 50%; object-fit: cover; border: 2px solid rgba(255,255,255,0.5); background: rgba(255,255,255,0.2); display: flex; align-items: center; justify-content: center; font-size: 1rem; overflow: hidden; flex-shrink: 0; }
+  .header-avatar img { width: 100%; height: 100%; object-fit: cover; }
+
+  /* ===== CONTAINER ===== */
+  .container { max-width: 860px; margin: 0 auto; padding: 24px 16px; }
+
+  /* ===== CARDS ===== */
+  .card { background: var(--card); border-radius: 12px; padding: 28px; box-shadow: 0 2px 12px rgba(0,0,0,0.08); margin-bottom: 20px; }
+  .card h2 { font-size: 1.4rem; color: var(--primary); margin-bottom: 16px; }
+
+  /* ===== BUTTONS ===== */
+  .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 12px 24px; border-radius: 8px; font-size: 0.95rem; font-weight: 600; cursor: pointer; border: none; transition: all 0.2s; text-decoration: none; }
+  .btn:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
+  .btn-primary { background: var(--primary); color: white; }
+  .btn-accent { background: var(--accent); color: white; }
+  .btn-success { background: var(--success); color: white; }
+  .btn-danger { background: var(--danger); color: white; }
+  .btn-outline { background: transparent; color: var(--primary); border: 2px solid var(--primary); }
+  .btn-lg { padding: 14px 32px; font-size: 1.05rem; }
+  .btn-sm { padding: 8px 16px; font-size: 0.85rem; }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+  /* ===== LOGIN SCREEN ===== */
+  #screen-username { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #1a237e 0%, #283593 50%, #1565c0 100%); }
+  .username-card { background: white; border-radius: 16px; padding: 48px 40px; max-width: 500px; width: 90%; text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,0.3); }
+  .username-card .logo { font-size: 3rem; margin-bottom: 12px; }
+  .username-card h1 { color: var(--primary); font-size: 1.8rem; margin-bottom: 6px; }
+  .username-card p { color: var(--muted); margin-bottom: 28px; font-size: 0.95rem; }
+  .input-group { text-align: left; margin-bottom: 16px; }
+  .input-group label { display: block; font-weight: 600; margin-bottom: 6px; color: var(--text); font-size: 0.9rem; }
+  .input-group input { width: 100%; padding: 12px 16px; border: 2px solid var(--border); border-radius: 8px; font-size: 1rem; outline: none; transition: border-color 0.2s; }
+  .input-group input:focus { border-color: var(--accent); }
+  .input-group input.error { border-color: var(--danger); }
+
+  /* Returning users list */
+  .returning-users { text-align: left; margin-bottom: 20px; }
+  .returning-users label { display: block; font-weight: 600; margin-bottom: 8px; color: var(--text); font-size: 0.9rem; }
+  .user-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .user-chip { padding: 6px 14px; border-radius: 20px; border: 2px solid var(--border); background: white; cursor: pointer; font-size: 0.88rem; font-weight: 600; color: var(--text); transition: all 0.2s; display: flex; align-items: center; gap: 6px; }
+  .user-chip:hover { border-color: var(--accent); background: #e3f2fd; color: var(--accent); }
+  .user-chip.selected { border-color: var(--accent); background: #e3f2fd; color: var(--accent); }
+  .user-chip .chip-avatar { width: 22px; height: 22px; border-radius: 50%; object-fit: cover; background: var(--bg); display: flex; align-items: center; justify-content: center; font-size: 0.7rem; overflow: hidden; flex-shrink: 0; }
+  .user-chip .chip-avatar img { width: 100%; height: 100%; object-fit: cover; }
+
+  .login-divider { display: flex; align-items: center; gap: 12px; margin: 16px 0; }
+  .login-divider hr { flex: 1; border: none; border-top: 1px solid var(--border); }
+  .login-divider span { font-size: 0.8rem; color: var(--muted); white-space: nowrap; }
+
+  /* ===== HOME SCREEN ===== */
+  .mode-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 8px; }
+  @media (max-width: 540px) { .mode-grid { grid-template-columns: 1fr; } }
+  .mode-card { border: 2px solid var(--border); border-radius: 12px; padding: 24px; cursor: pointer; transition: all 0.2s; text-align: center; }
+  .mode-card:hover, .mode-card.selected { border-color: var(--accent); background: #e3f2fd; }
+  .mode-card .icon { font-size: 2.2rem; margin-bottom: 10px; }
+  .mode-card h3 { font-size: 1.1rem; color: var(--primary); margin-bottom: 6px; }
+  .mode-card p { font-size: 0.85rem; color: var(--muted); }
+
+  /* ===== DIFFICULTY SELECTOR ===== */
+  .diff-grid { display: flex; gap: 10px; flex-wrap: wrap; }
+  .diff-btn { padding: 10px 20px; border-radius: 20px; border: 2px solid; cursor: pointer; font-size: 0.88rem; font-weight: 600; transition: all 0.2s; background: white; }
+  .diff-btn[data-diff="easy"] { border-color: var(--easy); color: var(--easy); }
+  .diff-btn[data-diff="medium"] { border-color: var(--medium); color: var(--medium); }
+  .diff-btn[data-diff="hard"] { border-color: var(--hard); color: var(--hard); }
+  .diff-btn[data-diff="extreme"] { border-color: var(--extreme); color: var(--extreme); }
+  .diff-btn.active[data-diff="easy"] { background: var(--easy); color: white; }
+  .diff-btn.active[data-diff="medium"] { background: var(--medium); color: white; }
+  .diff-btn.active[data-diff="hard"] { background: var(--hard); color: white; }
+  .diff-btn.active[data-diff="extreme"] { background: var(--extreme); color: white; }
+  .diff-btn.active[data-diff="all"] { background: var(--accent); color: white; border-color: var(--accent); }
+
+  /* ===== CHAPTER FILTER ===== */
+  .chapter-select { width: 100%; padding: 10px 14px; border: 2px solid var(--border); border-radius: 8px; font-size: 0.9rem; outline: none; }
+  .chapter-select:focus { border-color: var(--accent); }
+
+  /* ===== QUIZ SCREEN ===== */
+  .quiz-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; flex-wrap: wrap; gap: 12px; }
+  .quiz-info { display: flex; gap: 16px; align-items: center; }
+  .q-counter { font-size: 0.9rem; color: var(--muted); font-weight: 600; }
+  .q-chapter { font-size: 0.78rem; background: #e3f2fd; color: var(--accent); padding: 3px 10px; border-radius: 12px; font-weight: 600; }
+  .q-diff { font-size: 0.75rem; padding: 3px 10px; border-radius: 12px; font-weight: 700; text-transform: uppercase; }
+  .q-diff.easy { background: #e8f5e9; color: var(--easy); }
+  .q-diff.medium { background: #fff3e0; color: var(--warning); }
+  .q-diff.hard { background: #ffebee; color: var(--hard); }
+  .q-diff.extreme { background: #f3e5f5; color: var(--extreme); }
+
+  /* Timer */
+  .timer { display: flex; align-items: center; gap: 8px; padding: 8px 16px; border-radius: 20px; background: var(--primary); color: white; font-weight: 700; font-size: 1.1rem; }
+  .timer.warning { background: var(--warning); }
+  .timer.danger { background: var(--danger); animation: pulse 0.5s infinite; }
+  @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.7; } }
+
+  /* Progress bar */
+  .progress-wrap { background: #e0e0e0; border-radius: 4px; height: 6px; margin-bottom: 20px; }
+  .progress-bar { background: linear-gradient(90deg, var(--accent), #42a5f5); height: 100%; border-radius: 4px; transition: width 0.4s ease; }
+
+  /* Question */
+  .question-text { font-size: 1.1rem; font-weight: 600; line-height: 1.6; margin-bottom: 24px; color: var(--text); }
+  .options-list { display: flex; flex-direction: column; gap: 12px; }
+  .option-btn { width: 100%; text-align: left; padding: 14px 18px; border: 2px solid var(--border); border-radius: 10px; background: white; cursor: pointer; font-size: 0.95rem; line-height: 1.4; transition: all 0.2s; color: var(--text); }
+  .option-btn:hover:not(:disabled) { border-color: var(--accent); background: #e3f2fd; transform: translateX(4px); }
+  .option-btn.correct { border-color: var(--success); background: #e8f5e9; color: var(--success); font-weight: 600; }
+  .option-btn.wrong { border-color: var(--danger); background: #ffebee; color: var(--danger); }
+  .option-btn.revealed { border-color: var(--success); background: #e8f5e9; color: var(--success); }
+  .option-btn:disabled { cursor: default; }
+
+  /* Explanation */
+  .explanation-box { margin-top: 16px; padding: 14px 16px; border-radius: 8px; background: #e8eaf6; border-left: 4px solid var(--primary); font-size: 0.88rem; line-height: 1.6; color: var(--text); }
+  .explanation-box strong { color: var(--primary); }
+
+  /* Quiz nav */
+  .quiz-nav { display: flex; justify-content: space-between; align-items: center; margin-top: 24px; }
+
+  /* ===== RESULTS SCREEN ===== */
+  .score-circle { width: 140px; height: 140px; border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; margin: 0 auto 24px; border: 8px solid; }
+  .score-circle .score-pct { font-size: 2.4rem; font-weight: 800; }
+  .score-circle .score-label { font-size: 0.78rem; font-weight: 600; text-transform: uppercase; }
+  .score-pass { border-color: var(--success); color: var(--success); }
+  .score-fail { border-color: var(--danger); color: var(--danger); }
+  .score-ok { border-color: var(--warning); color: var(--warning); }
+  .results-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 20px; }
+  .stat-box { text-align: center; padding: 14px; border-radius: 8px; background: var(--bg); }
+  .stat-box .val { font-size: 1.6rem; font-weight: 800; }
+  .stat-box .lbl { font-size: 0.78rem; color: var(--muted); margin-top: 2px; }
+  .stat-box.correct .val { color: var(--success); }
+  .stat-box.wrong .val { color: var(--danger); }
+  .stat-box.total .val { color: var(--primary); }
+  .review-list { max-height: 400px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; padding-right: 4px; }
+  .review-item { border-radius: 8px; padding: 14px; border-left: 4px solid; }
+  .review-item.correct { border-color: var(--success); background: #f1f8e9; }
+  .review-item.wrong { border-color: var(--danger); background: #fce4ec; }
+  .review-item .q-text { font-size: 0.9rem; font-weight: 600; margin-bottom: 6px; }
+  .review-item .answers { font-size: 0.82rem; color: var(--muted); }
+  .review-item .answers .corr { color: var(--success); font-weight: 600; }
+  .review-item .answers .wrong-ans { color: var(--danger); font-weight: 600; }
+
+  /* ===== LEADERBOARD ===== */
+  .lb-controls { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 16px; align-items: center; }
+  .lb-tabs { display: flex; gap: 8px; flex-wrap: wrap; }
+  .lb-tab { padding: 7px 16px; border-radius: 20px; cursor: pointer; font-size: 0.85rem; font-weight: 600; border: 2px solid var(--border); background: white; color: var(--muted); transition: all 0.2s; }
+  .lb-tab.active { background: var(--primary); color: white; border-color: var(--primary); }
+  .lb-period-tabs { display: flex; gap: 6px; flex-wrap: wrap; }
+  .lb-period-tab { padding: 7px 14px; border-radius: 20px; cursor: pointer; font-size: 0.82rem; font-weight: 600; border: 2px solid var(--border); background: white; color: var(--muted); transition: all 0.2s; }
+  .lb-period-tab.active { background: var(--accent); color: white; border-color: var(--accent); }
+  .lb-diff-tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 14px; }
+  .lb-diff-tab { padding: 5px 12px; border-radius: 16px; cursor: pointer; font-size: 0.8rem; font-weight: 600; border: 2px solid var(--border); background: white; color: var(--muted); transition: all 0.2s; }
+  .lb-diff-tab.active { background: var(--primary-light); color: white; border-color: var(--primary-light); }
+  .lb-table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+  .lb-table th { background: var(--primary); color: white; padding: 10px 14px; text-align: left; font-weight: 600; font-size: 0.82rem; }
+  .lb-table th:first-child { border-radius: 8px 0 0 0; }
+  .lb-table th:last-child { border-radius: 0 8px 0 0; }
+  .lb-table td { padding: 10px 14px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+  .lb-table tr:hover td { background: #f5f5f5; }
+  .lb-table tr.highlight td { background: #fffde7; font-weight: 700; }
+  .rank-medal { font-size: 1.2rem; }
+  .score-badge { display: inline-block; padding: 2px 10px; border-radius: 12px; font-size: 0.8rem; font-weight: 700; }
+  .score-badge.pass { background: #e8f5e9; color: var(--success); }
+  .score-badge.fail { background: #ffebee; color: var(--danger); }
+  .score-badge.ok { background: #fff3e0; color: var(--warning); }
+  .no-data { text-align: center; color: var(--muted); padding: 40px; font-style: italic; }
+
+  /* Leaderboard avatar */
+  .lb-avatar-wrap { position: relative; display: inline-flex; align-items: center; justify-content: center; }
+  .lb-avatar { width: 32px; height: 32px; border-radius: 50%; object-fit: cover; background: var(--bg); display: flex; align-items: center; justify-content: center; font-size: 0.85rem; overflow: hidden; flex-shrink: 0; border: 2px solid var(--border); }
+  .lb-avatar img { width: 100%; height: 100%; object-fit: cover; }
+  /* Flame ring for streaks */
+  .flame-ring { position: relative; display: inline-flex; }
+  .flame-ring::before {
+    content: '';
+    position: absolute;
+    inset: -5px;
+    border-radius: 50%;
+    background: conic-gradient(#ff6600, #ff4500, #ff8c00, #ffd700, #ff4500, #ff6600, #ff4500, #ff6600);
+    animation: flameSpin 1.2s linear infinite;
+    z-index: 0;
+  }
+  .flame-ring::after {
+    content: '';
+    position: absolute;
+    inset: -3px;
+    border-radius: 50%;
+    background: conic-gradient(#ff9900 0%, #ff4400 30%, #ff9900 60%, #ffcc00 80%, #ff4400 100%);
+    animation: flameSpin 0.8s linear infinite reverse;
+    z-index: 0;
+    opacity: 0.7;
+  }
+  .flame-ring .lb-avatar { position: relative; z-index: 1; border-color: #ff8c00; }
+  @keyframes flameSpin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+  .streak-badge { font-size: 0.75rem; margin-left: 4px; }
+
+  /* ===== EXAM INFO BOX ===== */
+  .info-box { background: #e8eaf6; border-radius: 10px; padding: 16px 20px; margin-bottom: 16px; }
+  .info-box h4 { color: var(--primary); margin-bottom: 10px; font-size: 0.95rem; }
+  .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .info-item { font-size: 0.85rem; color: var(--text); }
+  .info-item span { font-weight: 700; color: var(--primary); }
+  .pass-info { font-size: 0.85rem; color: var(--success); font-weight: 700; margin-top: 8px; }
+
+  /* ===== NAV MENU ===== */
+  .nav-menu { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px; }
+  .nav-item { padding: 8px 16px; border-radius: 8px; cursor: pointer; font-size: 0.88rem; font-weight: 600; transition: all 0.2s; border: 2px solid transparent; color: var(--muted); }
+  .nav-item:hover { color: var(--primary); }
+  .nav-item.active { background: white; color: var(--primary); border-color: var(--primary); box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+
+  /* ===== PROFILE MODAL ===== */
+  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1000; display: flex; align-items: center; justify-content: center; padding: 16px; }
+  .modal-box { background: white; border-radius: 16px; padding: 32px; max-width: 420px; width: 100%; box-shadow: 0 20px 60px rgba(0,0,0,0.3); }
+  .modal-box h3 { color: var(--primary); font-size: 1.3rem; margin-bottom: 20px; }
+  .avatar-upload-area { display: flex; flex-direction: column; align-items: center; gap: 12px; margin-bottom: 20px; }
+  .avatar-preview { width: 90px; height: 90px; border-radius: 50%; border: 3px solid var(--border); object-fit: cover; background: var(--bg); display: flex; align-items: center; justify-content: center; font-size: 2rem; overflow: hidden; cursor: pointer; transition: border-color 0.2s; }
+  .avatar-preview:hover { border-color: var(--accent); }
+  .avatar-preview img { width: 100%; height: 100%; object-fit: cover; }
+  #avatar-file-input { display: none; }
+  .avatar-hint { font-size: 0.8rem; color: var(--muted); }
+  .streak-info { background: #fff8e1; border-radius: 8px; padding: 12px 16px; font-size: 0.88rem; margin-bottom: 16px; display: flex; align-items: center; gap: 10px; }
+  .streak-count { font-size: 1.4rem; font-weight: 800; color: #e65100; }
+
+  /* ===== ANIMATIONS ===== */
+  .fade-in { animation: fadeIn 0.3s ease; }
+  @keyframes fadeIn { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
+  .slide-in { animation: slideIn 0.3s ease; }
+  @keyframes slideIn { from { opacity:0; transform:translateX(20px); } to { opacity:1; transform:translateX(0); } }
+
+  /* ===== SCROLLBAR ===== */
+  ::-webkit-scrollbar { width: 6px; } ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+  /* Toast */
+  .toast { position: fixed; bottom: 24px; right: 24px; background: var(--primary); color: white; padding: 12px 20px; border-radius: 8px; font-size: 0.9rem; font-weight: 600; opacity: 0; transition: opacity 0.3s; z-index: 9999; max-width: 320px; }
+  .toast.show { opacity: 1; }
+
+  .divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; }
+  .text-center { text-align: center; }
+  .mt-16 { margin-top: 16px; }
+  .mb-8 { margin-bottom: 8px; }
+
+  /* Study Mode note */
+  .study-note { background: #fff8e1; border: 1px solid #ffd54f; border-radius: 8px; padding: 10px 14px; font-size: 0.82rem; color: #5d4037; margin-top: 12px; }
+
+  /* Streak flame emoji pulse */
+  .flame-emoji { display: inline-block; animation: flamePulse 0.9s ease-in-out infinite alternate; }
+  @keyframes flamePulse { from { transform: scale(1); } to { transform: scale(1.25); } }
+</style>
+</head>
+<body>
+
+<!-- ===== LOGIN / USERNAME SCREEN ===== -->
+<div id="screen-username">
+  <div class="username-card fade-in">
+    <div class="logo">📋</div>
+    <h1>ISTQB Reviewer</h1>
+    <p>Foundation Level v4.0 — 1,000 Practice Questions</p>
+
+    <!-- Returning users section (shown if any users exist) -->
+    <div id="returning-users-section" class="returning-users hidden">
+      <label>Welcome back! Select your profile:</label>
+      <div class="user-chips" id="user-chips"></div>
+    </div>
+
+    <div id="login-divider" class="login-divider hidden">
+      <hr><span>or create a new profile</span><hr>
+    </div>
+
+    <!-- New user / Entry ID fields -->
+    <div id="new-user-fields">
+      <div class="input-group">
+        <label for="username-input">Your Name</label>
+        <input type="text" id="username-input" placeholder="e.g. John Smith" maxlength="30" autocomplete="off">
+      </div>
+      <div class="input-group">
+        <label for="entryid-input">Entry ID <span style="font-weight:400;color:var(--muted)">(secret word — remember this!)</span></label>
+        <input type="password" id="entryid-input" placeholder="Choose a secret word or phrase" maxlength="40" autocomplete="off">
+      </div>
+    </div>
+
+    <!-- Returning user Entry ID verification (hidden by default) -->
+    <div id="verify-fields" class="hidden">
+      <div class="input-group">
+        <label id="verify-label">Enter your Entry ID for <strong id="verify-username-display"></strong></label>
+        <input type="password" id="verify-entryid-input" placeholder="Your secret word" maxlength="40" autocomplete="off">
+      </div>
+      <button class="btn btn-outline btn-sm" style="margin-bottom:12px" onclick="App.cancelVerify()">← Back</button>
+    </div>
+
+    <button class="btn btn-primary btn-lg" style="width:100%;margin-top:4px" id="btn-start" onclick="App.handleLogin()">Start →</button>
+    <p style="font-size:0.78rem;color:var(--muted);margin-top:16px">No internet required · All data saved locally</p>
+    <p style="font-size:0.72rem;color:var(--border);margin-top:10px"><a href="admin.html" style="color:var(--border);text-decoration:none" onmouseover="this.style.color='#546e7a'" onmouseout="this.style.color='var(--border)'">⚙ Admin</a></p>
+  </div>
+</div>
+
+<!-- ===== MAIN APP ===== -->
+<div id="screen-main" class="hidden">
+  <header>
+    <h1>📋 ISTQB Foundation Level Reviewer</h1>
+    <div class="user-badge" onclick="App.openProfile()" title="Edit profile">
+      <div class="header-avatar" id="header-avatar-wrap">👤</div>
+      <span class="user-badge-name" id="header-username">User</span>
+    </div>
+  </header>
+
+  <div class="container">
+    <div class="nav-menu" id="main-nav">
+      <div class="nav-item active" onclick="App.showSection('home')">🏠 Home</div>
+      <div class="nav-item" onclick="App.showSection('leaderboard')">🏆 Leaderboard</div>
+    </div>
+
+    <!-- HOME SECTION -->
+    <div id="section-home">
+      <div class="card fade-in">
+        <h2>Choose Your Session</h2>
+        <div class="mode-grid" id="mode-grid">
+          <div class="mode-card selected" data-mode="practice" onclick="App.selectMode('practice')">
+            <div class="icon">📝</div>
+            <h3>Practice Mode</h3>
+            <p>20 random questions · No timer · Choose difficulty</p>
+          </div>
+          <div class="mode-card" data-mode="exam" onclick="App.selectMode('exam')">
+            <div class="icon">🎯</div>
+            <h3>Exam Mode</h3>
+            <p>40 questions · 60 min timer · Mirrors real ISTQB exam</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- PRACTICE OPTIONS -->
+      <div class="card fade-in" id="practice-options">
+        <h2>Practice Options</h2>
+        <div class="mb-8"><strong style="font-size:0.9rem">Difficulty:</strong></div>
+        <div class="diff-grid mb-8" id="diff-filter">
+          <button class="diff-btn active" data-diff="all" onclick="App.setDiff('all')">All Levels</button>
+          <button class="diff-btn" data-diff="easy" onclick="App.setDiff('easy')">Easy</button>
+          <button class="diff-btn" data-diff="medium" onclick="App.setDiff('medium')">Medium</button>
+          <button class="diff-btn" data-diff="hard" onclick="App.setDiff('hard')">Hard</button>
+          <button class="diff-btn" data-diff="extreme" onclick="App.setDiff('extreme')">Extreme</button>
+        </div>
+        <div class="mb-8" style="margin-top:16px"><strong style="font-size:0.9rem">Chapter:</strong></div>
+        <select class="chapter-select" id="chapter-filter">
+          <option value="all">All Chapters</option>
+          <option value="Fundamentals of Testing">1. Fundamentals of Testing</option>
+          <option value="Testing Throughout the SDLC">2. Testing Throughout the SDLC</option>
+          <option value="Static Testing">3. Static Testing</option>
+          <option value="Test Analysis and Design">4. Test Analysis and Design</option>
+          <option value="Managing the Test Activities">5. Managing the Test Activities</option>
+          <option value="Test Tools">6. Test Tools</option>
+        </select>
+        <div class="study-note">💡 <strong>Study Tip:</strong> After answering, explanations will be shown. Review them to reinforce your learning.</div>
+      </div>
+
+      <!-- EXAM INFO -->
+      <div class="card fade-in hidden" id="exam-options">
+        <h2>Exam Mode Details</h2>
+        <div class="info-box">
+          <h4>📌 Real ISTQB FL Exam Simulation</h4>
+          <div class="info-grid">
+            <div class="info-item">Questions: <span>40</span></div>
+            <div class="info-item">Duration: <span>60 minutes</span></div>
+            <div class="info-item">Format: <span>Multiple Choice</span></div>
+            <div class="info-item">Coverage: <span>All 6 Chapters</span></div>
+          </div>
+          <div class="pass-info">✓ Passing score: 65% (26/40 correct)</div>
+        </div>
+        <div class="info-box" style="background:#fff3e0;margin-top:12px">
+          <strong style="color:var(--warning)">⚠ Exam Mode Rules:</strong>
+          <ul style="margin-top:8px;padding-left:20px;font-size:0.85rem;line-height:1.8">
+            <li>No explanations shown during the exam</li>
+            <li>You cannot go back to previous questions</li>
+            <li>Timer runs continuously — submission is automatic when time expires</li>
+            <li>Results and explanations shown after completion</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="text-center mt-16">
+        <button class="btn btn-primary btn-lg" onclick="App.startSession()">Start Session →</button>
+      </div>
+    </div>
+
+    <!-- QUIZ SECTION -->
+    <div id="section-quiz" class="hidden">
+      <div class="card fade-in">
+        <div class="quiz-header">
+          <div class="quiz-info">
+            <span class="q-counter" id="q-counter">Q 1 / 20</span>
+            <span class="q-chapter" id="q-chapter">Chapter</span>
+            <span class="q-diff easy" id="q-diff">easy</span>
+          </div>
+          <div id="timer-wrap" class="hidden">
+            <div class="timer" id="timer-display">⏱ 60:00</div>
+          </div>
+        </div>
+        <div class="progress-wrap">
+          <div class="progress-bar" id="progress-bar" style="width:0%"></div>
+        </div>
+        <div class="question-text" id="question-text"></div>
+        <div class="options-list" id="options-list"></div>
+        <div class="explanation-box hidden" id="explanation-box"></div>
+        <div class="quiz-nav">
+          <button class="btn btn-outline" id="btn-quit" onclick="App.confirmQuit()">⬅ Quit</button>
+          <button class="btn btn-primary hidden" id="btn-next" onclick="App.nextQuestion()">Next →</button>
+          <button class="btn btn-success hidden" id="btn-finish" onclick="App.finishSession()">Finish ✓</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- RESULTS SECTION -->
+    <div id="section-results" class="hidden">
+      <div class="card fade-in text-center">
+        <h2 id="results-title">Session Complete!</h2>
+        <div class="score-circle" id="score-circle">
+          <div class="score-pct" id="score-pct">0%</div>
+          <div class="score-label" id="score-label">Score</div>
+        </div>
+        <div class="results-stats">
+          <div class="stat-box correct"><div class="val" id="stat-correct">0</div><div class="lbl">Correct</div></div>
+          <div class="stat-box wrong"><div class="val" id="stat-wrong">0</div><div class="lbl">Incorrect</div></div>
+          <div class="stat-box total"><div class="val" id="stat-total">0</div><div class="lbl">Total</div></div>
+        </div>
+        <div id="pass-fail-msg" style="font-size:1rem;font-weight:700;margin-bottom:16px"></div>
+        <div id="time-taken-display" class="hidden" style="font-size:0.88rem;color:var(--muted);margin-bottom:16px"></div>
+        <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
+          <button class="btn btn-primary" onclick="App.startSession()">Retry Session</button>
+          <button class="btn btn-outline" onclick="App.showSection('home')">Home</button>
+          <button class="btn btn-outline" onclick="App.showSection('leaderboard')">🏆 Leaderboard</button>
+        </div>
+      </div>
+      <div class="card fade-in">
+        <h2>Review Answers</h2>
+        <div class="review-list" id="review-list"></div>
+      </div>
+    </div>
+
+    <!-- LEADERBOARD SECTION -->
+    <div id="section-leaderboard" class="hidden">
+      <div class="card fade-in">
+        <h2>🏆 Leaderboard</h2>
+        <!-- Mode tabs -->
+        <div class="lb-controls">
+          <div class="lb-tabs">
+            <div class="lb-tab active" id="lb-tab-practice" onclick="App.setLbMode('practice')">📝 Practice</div>
+            <div class="lb-tab" id="lb-tab-exam" onclick="App.setLbMode('exam')">🎯 Exam</div>
+          </div>
+          <div class="lb-period-tabs">
+            <div class="lb-period-tab active" id="lb-period-all" onclick="App.setLbPeriod('all')">All Time</div>
+            <div class="lb-period-tab" id="lb-period-daily" onclick="App.setLbPeriod('daily')">Daily</div>
+            <div class="lb-period-tab" id="lb-period-weekly" onclick="App.setLbPeriod('weekly')">Weekly</div>
+            <div class="lb-period-tab" id="lb-period-monthly" onclick="App.setLbPeriod('monthly')">Monthly</div>
+          </div>
+        </div>
+        <!-- Difficulty sub-tabs (practice only) -->
+        <div class="lb-diff-tabs" id="lb-diff-tabs">
+          <div class="lb-diff-tab active" id="lb-diff-all" onclick="App.setLbDiff('all')">All Difficulties</div>
+          <div class="lb-diff-tab" id="lb-diff-easy" onclick="App.setLbDiff('easy')">Easy</div>
+          <div class="lb-diff-tab" id="lb-diff-medium" onclick="App.setLbDiff('medium')">Medium</div>
+          <div class="lb-diff-tab" id="lb-diff-hard" onclick="App.setLbDiff('hard')">Hard</div>
+          <div class="lb-diff-tab" id="lb-diff-extreme" onclick="App.setLbDiff('extreme')">Extreme</div>
+        </div>
+        <div id="lb-content"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== PROFILE MODAL ===== -->
+<div id="profile-modal" class="modal-overlay hidden">
+  <div class="modal-box fade-in">
+    <h3>👤 Your Profile</h3>
+    <div class="avatar-upload-area">
+      <div class="avatar-preview" id="avatar-preview-modal" onclick="document.getElementById('avatar-file-input').click()" title="Click to change photo">👤</div>
+      <input type="file" id="avatar-file-input" accept="image/*">
+      <span class="avatar-hint">Click photo to upload / change</span>
+    </div>
+    <div class="streak-info" id="streak-info-modal">
+      <span class="streak-count" id="streak-count-modal">0</span>
+      <div>
+        <div style="font-weight:700;color:var(--text)">Day Streak</div>
+        <div style="color:var(--muted);font-size:0.8rem" id="streak-desc-modal">Start your streak by coming back tomorrow!</div>
+      </div>
+    </div>
+    <div class="input-group">
+      <label>Username</label>
+      <input type="text" id="profile-username-display" disabled style="background:var(--bg);color:var(--muted)">
+    </div>
+    <div style="display:flex;gap:10px;margin-top:8px">
+      <button class="btn btn-primary" style="flex:1" onclick="App.saveProfile()">Save</button>
+      <button class="btn btn-outline" style="flex:1" onclick="App.closeProfile()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const App = (() => {
+  // ---- State ----
+  let username = '';
+  let mode = 'practice';
+  let difficulty = 'all';
+  let chapterFilter = 'all';
+  let sessionQuestions = [];
+  let currentIndex = 0;
+  let score = 0;
+  let answered = false;
+  let timerInterval = null;
+  let timeLeft = 0;
+  let sessionStartTime = null;
+  let timeTaken = 0;
+  let sessionAnswers = [];
+  let lbMode = 'practice';
+  let lbPeriod = 'all';
+  let lbDiff = 'all';
+
+  // ---- Storage Keys ----
+  const LS_LB       = 'istqb_leaderboard_v3';
+  const LS_USERS    = 'istqb_users_v1';
+  const LS_SESSIONS = 'istqb_sessions_v1'; // full session log
+
+  // ==============================================================
+  // USER PROFILES
+  // ==============================================================
+  function loadUsers() {
+    try { return JSON.parse(localStorage.getItem(LS_USERS) || '{}'); } catch(e) { return {}; }
+  }
+  function saveUsers(data) { localStorage.setItem(LS_USERS, JSON.stringify(data)); }
+
+  function getUser(name) {
+    const users = loadUsers();
+    return users[name] || null;
+  }
+
+  function upsertUser(name, patch) {
+    const users = loadUsers();
+    users[name] = Object.assign(users[name] || {}, patch);
+    saveUsers(users);
+    return users[name];
+  }
+
+  // Simple hash for Entry ID (not cryptographic — client-side only)
+  function hashEntry(s) {
+    let h = 0;
+    for (let i = 0; i < s.length; i++) {
+      h = ((h << 5) - h) + s.charCodeAt(i);
+      h |= 0;
+    }
+    return 'eid_' + Math.abs(h).toString(36);
+  }
+
+  // ==============================================================
+  // STREAK TRACKING
+  // ==============================================================
+  function todayStr() {
+    return new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+  }
+
+  function updateStreak(name) {
+    const user = getUser(name) || {};
+    const today = todayStr();
+    if (user.lastActiveDate === today) return; // already counted today
+
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    const yStr = yesterday.toISOString().slice(0, 10);
+
+    let streak = user.streak || 0;
+    if (user.lastActiveDate === yStr) {
+      streak += 1; // consecutive day
+    } else if (!user.lastActiveDate) {
+      streak = 1; // first day ever
+    } else {
+      streak = 1; // streak broken, restart
+    }
+    upsertUser(name, { streak, lastActiveDate: today });
+  }
+
+  function getStreak(name) {
+    const user = getUser(name);
+    if (!user) return 0;
+    // If last active was not today or yesterday, streak is broken
+    const today = todayStr();
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    const yStr = yesterday.toISOString().slice(0, 10);
+    if (user.lastActiveDate === today || user.lastActiveDate === yStr) {
+      return user.streak || 0;
+    }
+    return 0;
+  }
+
+  // ==============================================================
+  // LEADERBOARD STORAGE
+  // ==============================================================
+  function loadLB() { try { return JSON.parse(localStorage.getItem(LS_LB) || '[]'); } catch(e) { return []; } }
+  function saveLB(data) { localStorage.setItem(LS_LB, JSON.stringify(data)); }
+
+  // ==============================================================
+  // SESSION LOG  (full detail — source of truth)
+  // ==============================================================
+  function loadSessions() {
+    try { return JSON.parse(localStorage.getItem(LS_SESSIONS) || '[]'); } catch(e) { return []; }
+  }
+  function saveSessions(data) { localStorage.setItem(LS_SESSIONS, JSON.stringify(data)); }
+
+  function saveScore(entry) {
+    // 1. Save to leaderboard index (fast lookup for rankings)
+    const lb = loadLB();
+    lb.unshift(entry);
+    lb.splice(2000);
+    saveLB(lb);
+
+    // 2. Save full session record (source of truth for admin)
+    const record = Object.assign({}, entry, {
+      sessionId: 'sid_' + entry.ts + '_' + Math.random().toString(36).slice(2, 7),
+      answers: sessionAnswers.map(a => ({
+        qId: a.qId,
+        question: a.question,
+        chosen: a.chosen,
+        correct: a.correct,
+        isCorrect: a.isCorrect
+      }))
+    });
+    const allSessions = loadSessions();
+    allSessions.unshift(record);
+    allSessions.splice(5000); // keep last 5000 full session records
+    saveSessions(allSessions);
+  }
+
+  // ==============================================================
+  // LOGIN SCREEN SETUP
+  // ==============================================================
+  function initLoginScreen() {
+    const users = loadUsers();
+    const names = Object.keys(users);
+    const section = document.getElementById('returning-users-section');
+    const divider = document.getElementById('login-divider');
+    const chips = document.getElementById('user-chips');
+    chips.innerHTML = '';
+
+    if (names.length > 0) {
+      section.classList.remove('hidden');
+      divider.classList.remove('hidden');
+      names.forEach(name => {
+        const u = users[name];
+        const chip = document.createElement('div');
+        chip.className = 'user-chip';
+        chip.dataset.name = name;
+        chip.onclick = () => selectReturningUser(name);
+
+        const avWrap = document.createElement('div');
+        avWrap.className = 'chip-avatar';
+        if (u.avatar) {
+          const img = document.createElement('img');
+          img.src = u.avatar;
+          avWrap.appendChild(img);
+        } else {
+          avWrap.textContent = name.charAt(0).toUpperCase();
+        }
+        chip.appendChild(avWrap);
+        chip.appendChild(document.createTextNode(name));
+
+        const streak = getStreak(name);
+        if (streak >= 3) {
+          const fl = document.createElement('span');
+          fl.className = 'flame-emoji';
+          fl.textContent = '🔥';
+          chip.appendChild(fl);
+        }
+        chips.appendChild(chip);
+      });
+    } else {
+      section.classList.add('hidden');
+      divider.classList.add('hidden');
+    }
+  }
+
+  let pendingVerifyName = null;
+
+  function selectReturningUser(name) {
+    // Highlight chip
+    document.querySelectorAll('.user-chip').forEach(c => c.classList.toggle('selected', c.dataset.name === name));
+    // Show Entry ID verification
+    pendingVerifyName = name;
+    document.getElementById('new-user-fields').classList.add('hidden');
+    document.getElementById('verify-fields').classList.remove('hidden');
+    document.getElementById('verify-username-display').textContent = name;
+    document.getElementById('verify-entryid-input').value = '';
+    document.getElementById('verify-entryid-input').focus();
+  }
+
+  function cancelVerify() {
+    pendingVerifyName = null;
+    document.querySelectorAll('.user-chip').forEach(c => c.classList.remove('selected'));
+    document.getElementById('verify-fields').classList.add('hidden');
+    document.getElementById('new-user-fields').classList.remove('hidden');
+    document.getElementById('username-input').value = '';
+    document.getElementById('entryid-input').value = '';
+  }
+
+  function handleLogin() {
+    if (pendingVerifyName) {
+      // Returning user verification
+      const entryRaw = document.getElementById('verify-entryid-input').value.trim();
+      if (!entryRaw) {
+        document.getElementById('verify-entryid-input').classList.add('error');
+        showToast('Please enter your Entry ID'); return;
+      }
+      const user = getUser(pendingVerifyName);
+      if (!user || hashEntry(entryRaw) !== user.entryIdHash) {
+        document.getElementById('verify-entryid-input').classList.add('error');
+        showToast('Incorrect Entry ID. Try again.'); return;
+      }
+      loginAs(pendingVerifyName);
+    } else {
+      // New user registration
+      const nameVal = document.getElementById('username-input').value.trim();
+      const entryRaw = document.getElementById('entryid-input').value.trim();
+      if (!nameVal) {
+        document.getElementById('username-input').classList.add('error');
+        showToast('Please enter your name'); return;
+      }
+      if (!entryRaw) {
+        document.getElementById('entryid-input').classList.add('error');
+        showToast('Please set an Entry ID (secret word)'); return;
+      }
+      // Check if name already taken
+      const existing = getUser(nameVal);
+      if (existing) {
+        showToast('That name already exists. Select it above or choose a different name.');
+        return;
+      }
+      upsertUser(nameVal, { entryIdHash: hashEntry(entryRaw), streak: 0, lastActiveDate: null, avatar: null });
+      loginAs(nameVal);
+    }
+  }
+
+  function loginAs(name) {
+    username = name;
+    updateStreak(name);
+    updateHeaderAvatar();
+    document.getElementById('header-username').textContent = '👤 ' + username;
+    document.getElementById('screen-username').classList.add('hidden');
+    document.getElementById('screen-main').classList.remove('hidden');
+    showSection('home');
+    // Show streak notification if applicable
+    const s = getStreak(name);
+    if (s >= 3) showToast('🔥 ' + s + '-day streak! Keep it up, ' + name + '!');
+    else if (s === 1) showToast('Welcome, ' + name + '! Day 1 streak started.');
+  }
+
+  function updateHeaderAvatar() {
+    const user = getUser(username);
+    const wrap = document.getElementById('header-avatar-wrap');
+    if (user && user.avatar) {
+      wrap.innerHTML = '<img src="' + user.avatar + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%">';
+    } else {
+      wrap.textContent = '👤';
+    }
+  }
+
+  // ==============================================================
+  // PROFILE MODAL
+  // ==============================================================
+  let pendingAvatarDataUrl = null;
+
+  function openProfile() {
+    const user = getUser(username) || {};
+    pendingAvatarDataUrl = null;
+    const preview = document.getElementById('avatar-preview-modal');
+    if (user.avatar) {
+      preview.innerHTML = '<img src="' + user.avatar + '">';
+    } else {
+      preview.textContent = '👤';
+    }
+    document.getElementById('profile-username-display').value = username;
+    const streak = getStreak(username);
+    document.getElementById('streak-count-modal').textContent = streak;
+    document.getElementById('streak-desc-modal').textContent =
+      streak >= 3 ? '🔥 You\'re on fire! ' + streak + '-day streak!' :
+      streak === 2 ? 'Come back tomorrow to build a streak!' :
+      streak === 1 ? 'Day 1! Come back tomorrow to continue.' :
+      'Start your streak by using the app daily.';
+    document.getElementById('profile-modal').classList.remove('hidden');
+  }
+
+  function closeProfile() {
+    document.getElementById('profile-modal').classList.add('hidden');
+    pendingAvatarDataUrl = null;
+  }
+
+  function saveProfile() {
+    if (pendingAvatarDataUrl) {
+      upsertUser(username, { avatar: pendingAvatarDataUrl });
+      updateHeaderAvatar();
+      showToast('Profile picture updated!');
+    }
+    closeProfile();
+  }
+
+  // Avatar file input handler
+  document.getElementById('avatar-file-input').addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    if (file.size > 2 * 1024 * 1024) { showToast('Image too large (max 2 MB)'); return; }
+    const reader = new FileReader();
+    reader.onload = function(ev) {
+      pendingAvatarDataUrl = ev.target.result;
+      const preview = document.getElementById('avatar-preview-modal');
+      preview.innerHTML = '<img src="' + pendingAvatarDataUrl + '">';
+    };
+    reader.readAsDataURL(file);
+    this.value = '';
+  });
+
+  // ==============================================================
+  // SECTION NAVIGATION
+  // ==============================================================
+  function showSection(sec) {
+    ['home','quiz','results','leaderboard'].forEach(s => {
+      document.getElementById('section-' + s).classList.add('hidden');
+    });
+    document.getElementById('section-' + sec).classList.remove('hidden');
+    document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+    if (sec === 'home') document.querySelector('[onclick*="\'home\'"]').classList.add('active');
+    if (sec === 'leaderboard') {
+      document.querySelector('[onclick*="\'leaderboard\'"]').classList.add('active');
+      renderLeaderboard();
+    }
+    if (sec === 'quiz' || sec === 'home') stopTimer();
+  }
+
+  // ==============================================================
+  // MODE / DIFFICULTY
+  // ==============================================================
+  function selectMode(m) {
+    mode = m;
+    document.querySelectorAll('.mode-card').forEach(c => c.classList.remove('selected'));
+    document.querySelector('[data-mode="' + m + '"]').classList.add('selected');
+    document.getElementById('practice-options').classList.toggle('hidden', m !== 'practice');
+    document.getElementById('exam-options').classList.toggle('hidden', m !== 'exam');
+  }
+
+  function setDiff(d) {
+    difficulty = d;
+    document.querySelectorAll('.diff-btn').forEach(b => b.classList.remove('active'));
+    document.querySelector('[data-diff="' + d + '"]').classList.add('active');
+  }
+
+  // ==============================================================
+  // QUESTION POOL
+  // ==============================================================
+  function getPool() {
+    let pool = window.QUESTIONS || [];
+    if (mode === 'practice') {
+      if (difficulty !== 'all') pool = pool.filter(q => q.difficulty === difficulty);
+      const ch = document.getElementById('chapter-filter').value;
+      if (ch !== 'all') pool = pool.filter(q => q.chapter === ch);
+    }
+    return pool;
+  }
+
+  function shuffle(arr) {
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+  }
+
+  // ==============================================================
+  // SESSION
+  // ==============================================================
+  function startSession() {
+    const pool = getPool();
+    const count = mode === 'exam' ? 40 : 20;
+    if (pool.length < count) {
+      showToast('Not enough questions (' + pool.length + '). Please adjust settings.');
+      return;
+    }
+    sessionQuestions = shuffle([...pool]).slice(0, count);
+    currentIndex = 0;
+    score = 0;
+    answered = false;
+    sessionAnswers = [];
+    sessionStartTime = Date.now();
+    showSection('quiz');
+    renderQuestion();
+    if (mode === 'exam') {
+      timeLeft = 60 * 60;
+      document.getElementById('timer-wrap').classList.remove('hidden');
+      startTimer();
+    } else {
+      document.getElementById('timer-wrap').classList.add('hidden');
+    }
+  }
+
+  function renderQuestion() {
+    const q = sessionQuestions[currentIndex];
+    const total = sessionQuestions.length;
+    document.getElementById('q-counter').textContent = 'Q ' + (currentIndex + 1) + ' / ' + total;
+    document.getElementById('q-chapter').textContent = q.chapter;
+    const dEl = document.getElementById('q-diff');
+    dEl.textContent = q.difficulty.charAt(0).toUpperCase() + q.difficulty.slice(1);
+    dEl.className = 'q-diff ' + q.difficulty;
+    document.getElementById('progress-bar').style.width = ((currentIndex / total) * 100) + '%';
+    document.getElementById('question-text').textContent = (currentIndex + 1) + '. ' + q.question;
+    document.getElementById('explanation-box').classList.add('hidden');
+    document.getElementById('btn-next').classList.add('hidden');
+    document.getElementById('btn-finish').classList.add('hidden');
+    const optList = document.getElementById('options-list');
+    optList.innerHTML = '';
+    q.options.forEach((opt, i) => {
+      const btn = document.createElement('button');
+      btn.className = 'option-btn';
+      btn.textContent = opt;
+      btn.setAttribute('data-index', i);
+      btn.onclick = () => selectAnswer(i);
+      optList.appendChild(btn);
+    });
+    answered = false;
+  }
+
+  function selectAnswer(chosen) {
+    if (answered) return;
+    answered = true;
+    const q = sessionQuestions[currentIndex];
+    const buttons = document.querySelectorAll('.option-btn');
+    const isCorrect = chosen === q.answer;
+    if (isCorrect) score++;
+    buttons.forEach((btn, i) => {
+      btn.disabled = true;
+      if (i === q.answer) btn.classList.add('correct');
+      if (i === chosen && !isCorrect) btn.classList.add('wrong');
+    });
+    sessionAnswers.push({ qId: q.id, question: q.question, chosen, correct: q.answer, isCorrect, options: q.options });
+    if (mode === 'practice') {
+      const expBox = document.getElementById('explanation-box');
+      expBox.innerHTML = '<strong>Explanation:</strong> ' + q.explanation;
+      expBox.classList.remove('hidden');
+    }
+    const isLast = currentIndex === sessionQuestions.length - 1;
+    if (isLast) document.getElementById('btn-finish').classList.remove('hidden');
+    else document.getElementById('btn-next').classList.remove('hidden');
+  }
+
+  function nextQuestion() { currentIndex++; renderQuestion(); }
+
+  function finishSession() {
+    stopTimer();
+    timeTaken = Math.floor((Date.now() - sessionStartTime) / 1000);
+    showResults();
+  }
+
+  function confirmQuit() {
+    if (confirm('Are you sure you want to quit this session? Progress will be lost.')) {
+      stopTimer(); showSection('home');
+    }
+  }
+
+  // ==============================================================
+  // TIMER
+  // ==============================================================
+  function startTimer() {
+    updateTimerDisplay();
+    timerInterval = setInterval(() => {
+      timeLeft--;
+      updateTimerDisplay();
+      if (timeLeft <= 0) {
+        stopTimer();
+        showToast('Time is up! Submitting your answers...');
+        setTimeout(() => finishSession(), 1500);
+      }
+    }, 1000);
+  }
+  function stopTimer() { if (timerInterval) { clearInterval(timerInterval); timerInterval = null; } }
+  function updateTimerDisplay() {
+    const m = Math.floor(timeLeft / 60), s = timeLeft % 60;
+    const display = document.getElementById('timer-display');
+    display.textContent = '⏱ ' + String(m).padStart(2,'0') + ':' + String(s).padStart(2,'0');
+    display.className = 'timer';
+    if (timeLeft <= 300) display.classList.add('danger');
+    else if (timeLeft <= 600) display.classList.add('warning');
+  }
+
+  // ==============================================================
+  // RESULTS
+  // ==============================================================
+  function showResults() {
+    const total = sessionQuestions.length;
+    const pct = Math.round((score / total) * 100);
+    const pass = mode === 'exam' ? pct >= 65 : pct >= 70;
+    const circle = document.getElementById('score-circle');
+    circle.className = 'score-circle ' + (pct >= 75 ? 'score-pass' : pct >= 65 ? 'score-ok' : 'score-fail');
+    document.getElementById('score-pct').textContent = pct + '%';
+    document.getElementById('score-label').textContent = mode === 'exam' ? 'Exam Score' : 'Practice Score';
+    document.getElementById('stat-correct').textContent = score;
+    document.getElementById('stat-wrong').textContent = total - score;
+    document.getElementById('stat-total').textContent = total;
+    document.getElementById('results-title').textContent = mode === 'exam' ? '🎯 Exam Complete!' : '📝 Practice Complete!';
+    const pfMsg = document.getElementById('pass-fail-msg');
+    if (mode === 'exam') {
+      pfMsg.textContent = pass ? '🎉 PASSED! Great work!' : '❌ Did not pass. Keep studying!';
+      pfMsg.style.color = pass ? 'var(--success)' : 'var(--danger)';
+    } else {
+      pfMsg.textContent = pct >= 80 ? '⭐ Excellent!' : pct >= 65 ? '✅ Good job!' : '📚 Keep practicing!';
+      pfMsg.style.color = pct >= 65 ? 'var(--success)' : 'var(--warning)';
+    }
+    if (mode === 'exam') {
+      const mm = Math.floor(timeTaken / 60), ss = timeTaken % 60;
+      const td = document.getElementById('time-taken-display');
+      td.textContent = 'Time taken: ' + mm + 'm ' + ss + 's';
+      td.classList.remove('hidden');
+    } else {
+      document.getElementById('time-taken-display').classList.add('hidden');
+    }
+
+    // Review list
+    const reviewList = document.getElementById('review-list');
+    reviewList.innerHTML = '';
+    sessionAnswers.forEach((a, i) => {
+      const item = document.createElement('div');
+      item.className = 'review-item ' + (a.isCorrect ? 'correct' : 'wrong');
+      item.innerHTML = '<div class="q-text">' + (i+1) + '. ' + escapeHtml(a.question) + '</div>' +
+        '<div class="answers"><span class="corr">✓ ' + escapeHtml(a.options[a.correct]) + '</span>' +
+        (!a.isCorrect ? ' &nbsp;|&nbsp; <span class="wrong-ans">✗ ' + escapeHtml(a.options[a.chosen]) + '</span>' : '') +
+        '</div>';
+      reviewList.appendChild(item);
+    });
+
+    // Save score — store ISO timestamp for period filtering
+    const now = new Date();
+    const entry = {
+      username,
+      mode,
+      score,
+      total,
+      pct,
+      pass,
+      difficulty: mode === 'practice' ? difficulty : 'exam',
+      date: now.toLocaleDateString(),
+      time: now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      ts: now.getTime(), // millisecond timestamp for period filtering
+      timeTaken: mode === 'exam' ? timeTaken : null
+    };
+    saveScore(entry);
+    showSection('results');
+  }
+
+  // ==============================================================
+  // LEADERBOARD
+  // ==============================================================
+  function setLbMode(m) {
+    lbMode = m;
+    ['practice','exam'].forEach(t => {
+      document.getElementById('lb-tab-' + t).classList.toggle('active', t === m);
+    });
+    // Show/hide difficulty tabs (only for practice)
+    document.getElementById('lb-diff-tabs').style.display = m === 'practice' ? 'flex' : 'none';
+    if (m === 'exam') lbDiff = 'all';
+    renderLeaderboard();
+  }
+
+  function setLbPeriod(p) {
+    lbPeriod = p;
+    ['all','daily','weekly','monthly'].forEach(t => {
+      document.getElementById('lb-period-' + t).classList.toggle('active', t === p);
+    });
+    renderLeaderboard();
+  }
+
+  function setLbDiff(d) {
+    lbDiff = d;
+    ['all','easy','medium','hard','extreme'].forEach(t => {
+      document.getElementById('lb-diff-' + t).classList.toggle('active', t === d);
+    });
+    renderLeaderboard();
+  }
+
+  function getPeriodStart(period) {
+    const now = new Date();
+    if (period === 'daily') {
+      const s = new Date(now); s.setHours(0,0,0,0); return s.getTime();
+    }
+    if (period === 'weekly') {
+      const s = new Date(now);
+      s.setHours(0,0,0,0);
+      s.setDate(s.getDate() - s.getDay()); // start of week (Sunday)
+      return s.getTime();
+    }
+    if (period === 'monthly') {
+      const s = new Date(now.getFullYear(), now.getMonth(), 1);
+      return s.getTime();
+    }
+    return 0; // 'all'
+  }
+
+  function renderLeaderboard() {
+    let lb = loadLB();
+
+    // Filter by mode
+    lb = lb.filter(e => e.mode === lbMode);
+
+    // Filter by difficulty (practice only)
+    if (lbMode === 'practice' && lbDiff !== 'all') {
+      lb = lb.filter(e => e.difficulty === lbDiff);
+    }
+
+    // Filter by period
+    if (lbPeriod !== 'all') {
+      const start = getPeriodStart(lbPeriod);
+      lb = lb.filter(e => e.ts && e.ts >= start);
+    }
+
+    // Sort: best % first, then best score
+    lb = lb.sort((a, b) => b.pct - a.pct || b.score - a.score);
+
+    // Deduplicate: keep best entry per user for ranking
+    const seen = {};
+    const ranked = [];
+    lb.forEach(e => {
+      if (!seen[e.username]) { seen[e.username] = true; ranked.push(e); }
+    });
+
+    const container = document.getElementById('lb-content');
+    const periodLabel = { all: 'All Time', daily: 'Today', weekly: 'This Week', monthly: 'This Month' }[lbPeriod];
+    const modeLabel = lbMode === 'exam' ? '🎯 Exam' : '📝 Practice';
+    const diffLabel = lbMode === 'practice' && lbDiff !== 'all' ? ' · ' + lbDiff.charAt(0).toUpperCase() + lbDiff.slice(1) : '';
+
+    if (ranked.length === 0) {
+      container.innerHTML = '<div class="no-data">No scores for ' + modeLabel + diffLabel + ' — ' + periodLabel + '.<br>Complete a session to appear here!</div>';
+      return;
+    }
+
+    const users = loadUsers();
+    const top = ranked.slice(0, 50);
+
+    let html = '<p style="font-size:0.8rem;color:var(--muted);margin-bottom:12px">' + modeLabel + diffLabel + ' · ' + periodLabel + ' · Top ' + top.length + ' learners</p>';
+    html += '<div style="overflow-x:auto"><table class="lb-table"><thead><tr><th>Rank</th><th>Player</th><th>Score</th>';
+    if (lbMode === 'practice') html += '<th>Difficulty</th>';
+    html += '<th>Date</th></tr></thead><tbody>';
+
+    top.forEach((entry, i) => {
+      const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : (i + 1);
+      const isMe = entry.username === username;
+      const badgeCls = entry.pct >= 75 ? 'pass' : entry.pct >= 65 ? 'ok' : 'fail';
+      const userProfile = users[entry.username] || {};
+      const streak = getStreak(entry.username);
+      const hasFlame = streak >= 3;
+
+      // Avatar cell
+      let avatarHtml = '';
+      const avInner = userProfile.avatar
+        ? '<img src="' + userProfile.avatar + '">'
+        : entry.username.charAt(0).toUpperCase();
+      if (hasFlame) {
+        avatarHtml = '<span class="flame-ring"><span class="lb-avatar">' + avInner + '</span></span>';
+      } else {
+        avatarHtml = '<span class="lb-avatar">' + avInner + '</span>';
+      }
+
+      const streakHtml = hasFlame ? ' <span class="streak-badge flame-emoji" title="' + streak + '-day streak">🔥</span>' : '';
+
+      html += '<tr' + (isMe ? ' class="highlight"' : '') + '>';
+      html += '<td><span class="rank-medal">' + medal + '</span></td>';
+      html += '<td style="display:flex;align-items:center;gap:8px;min-width:140px">' + avatarHtml + '<span>' + escapeHtml(entry.username) + streakHtml + (isMe ? ' <span style="font-size:0.72rem;color:var(--accent)">◀ You</span>' : '') + '</span></td>';
+      html += '<td><span class="score-badge ' + badgeCls + '">' + entry.pct + '%</span> <span style="font-size:0.8rem;color:var(--muted)">(' + entry.score + '/' + entry.total + ')</span></td>';
+      if (lbMode === 'practice') {
+        const dBadge = entry.difficulty && entry.difficulty !== 'all' ? entry.difficulty : 'mixed';
+        html += '<td style="font-size:0.8rem;text-transform:capitalize">' + dBadge + '</td>';
+      }
+      html += '<td style="font-size:0.8rem;color:var(--muted)">' + entry.date + '</td>';
+      html += '</tr>';
+    });
+
+    html += '</tbody></table></div>';
+    if (ranked.length > 50) html += '<p style="font-size:0.8rem;color:var(--muted);margin-top:8px;text-align:center">Showing top 50 of ' + ranked.length + ' entries</p>';
+    container.innerHTML = html;
+  }
+
+  // ==============================================================
+  // UTILITIES
+  // ==============================================================
+  function escapeHtml(s) {
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 3000);
+  }
+
+  // ==============================================================
+  // INIT
+  // ==============================================================
+  initLoginScreen();
+
+  // Enter key support
+  document.getElementById('username-input').addEventListener('keypress', e => { if (e.key === 'Enter') handleLogin(); });
+  document.getElementById('entryid-input').addEventListener('keypress', e => { if (e.key === 'Enter') handleLogin(); });
+  document.getElementById('verify-entryid-input').addEventListener('keypress', e => { if (e.key === 'Enter') handleLogin(); });
+
+  // Clear error styling on type
+  ['username-input','entryid-input','verify-entryid-input'].forEach(id => {
+    document.getElementById(id).addEventListener('input', function() { this.classList.remove('error'); });
+  });
+
+  // Close profile modal on overlay click
+  document.getElementById('profile-modal').addEventListener('click', function(e) {
+    if (e.target === this) closeProfile();
+  });
+
+  // Public API
+  return {
+    handleLogin, cancelVerify,
+    showSection, selectMode, setDiff, startSession,
+    selectAnswer, nextQuestion, finishSession, confirmQuit,
+    setLbMode, setLbPeriod, setLbDiff,
+    openProfile, closeProfile, saveProfile
+  };
+})();
+</script>
+</body>
+</html>

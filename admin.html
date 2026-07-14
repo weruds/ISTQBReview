@@ -1,0 +1,766 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ISTQB Admin Panel</title>
+<style>
+  :root {
+    --primary: #1a237e;
+    --accent:  #1565c0;
+    --success: #2e7d32;
+    --danger:  #c62828;
+    --warning: #e65100;
+    --bg:      #f0f2f5;
+    --card:    #ffffff;
+    --text:    #1a1a2e;
+    --muted:   #546e7a;
+    --border:  #cfd8dc;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system,'Segoe UI',system-ui,sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+  .hidden { display: none !important; }
+
+  /* ===== LOGIN ===== */
+  #screen-login { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg,#1a237e 0%,#283593 50%,#1565c0 100%); }
+  .login-card { background: #fff; border-radius: 16px; padding: 48px 40px; max-width: 400px; width: 90%; text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,0.3); }
+  .login-card .logo { font-size: 2.6rem; margin-bottom: 12px; }
+  .login-card h1 { color: var(--primary); font-size: 1.6rem; margin-bottom: 4px; }
+  .login-card p { color: var(--muted); font-size: 0.88rem; margin-bottom: 28px; }
+  .field { text-align: left; margin-bottom: 16px; }
+  .field label { display: block; font-weight: 600; margin-bottom: 6px; font-size: 0.88rem; color: var(--text); }
+  .field input { width: 100%; padding: 11px 14px; border: 2px solid var(--border); border-radius: 8px; font-size: 0.95rem; outline: none; transition: border-color 0.2s; }
+  .field input:focus { border-color: var(--accent); }
+  .field input.error { border-color: var(--danger); }
+  .err-msg { color: var(--danger); font-size: 0.82rem; margin-top: -8px; margin-bottom: 12px; text-align: left; }
+
+  /* ===== MAIN ADMIN ===== */
+  header { background: linear-gradient(135deg,var(--primary) 0%,var(--accent) 100%); color: white; padding: 14px 28px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 2px 8px rgba(0,0,0,0.3); }
+  header h1 { font-size: 1.15rem; font-weight: 700; }
+  .header-actions { display: flex; align-items: center; gap: 12px; }
+  .back-link { color: rgba(255,255,255,0.8); font-size: 0.85rem; text-decoration: none; padding: 6px 14px; border: 1px solid rgba(255,255,255,0.3); border-radius: 20px; transition: all 0.2s; }
+  .back-link:hover { background: rgba(255,255,255,0.15); color: white; }
+  .admin-badge { background: rgba(255,255,255,0.2); padding: 4px 12px; border-radius: 20px; font-size: 0.8rem; }
+  .logout-btn { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.3); color: white; padding: 6px 14px; border-radius: 20px; cursor: pointer; font-size: 0.82rem; transition: all 0.2s; }
+  .logout-btn:hover { background: rgba(255,255,255,0.2); }
+
+  .container { max-width: 1100px; margin: 0 auto; padding: 24px 20px; }
+
+  /* ===== STATS BAR ===== */
+  .stats-bar { display: grid; grid-template-columns: repeat(4,1fr); gap: 14px; margin-bottom: 24px; }
+  @media(max-width:640px){ .stats-bar { grid-template-columns: 1fr 1fr; } }
+  .stat-card { background: var(--card); border-radius: 12px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.07); }
+  .stat-card .s-val { font-size: 2rem; font-weight: 800; color: var(--primary); }
+  .stat-card .s-lbl { font-size: 0.78rem; color: var(--muted); margin-top: 2px; }
+
+  /* ===== TABS ===== */
+  .tab-bar { display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; }
+  .tab { padding: 9px 20px; border-radius: 8px; cursor: pointer; font-size: 0.88rem; font-weight: 600; border: 2px solid var(--border); background: var(--card); color: var(--muted); transition: all 0.2s; }
+  .tab.active { background: var(--primary); color: white; border-color: var(--primary); }
+  .tab:hover:not(.active) { border-color: var(--accent); color: var(--accent); }
+
+  /* ===== CARD ===== */
+  .card { background: var(--card); border-radius: 12px; padding: 24px; box-shadow: 0 2px 12px rgba(0,0,0,0.07); margin-bottom: 20px; }
+  .card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; flex-wrap: wrap; gap: 10px; }
+  .card-header h2 { font-size: 1.15rem; color: var(--primary); }
+
+  /* ===== FILTERS ===== */
+  .filter-row { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; align-items: flex-end; }
+  .filter-group { display: flex; flex-direction: column; gap: 4px; min-width: 140px; }
+  .filter-group label { font-size: 0.78rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.4px; }
+  .filter-group select, .filter-group input { padding: 8px 12px; border: 2px solid var(--border); border-radius: 8px; font-size: 0.88rem; outline: none; background: white; }
+  .filter-group select:focus, .filter-group input:focus { border-color: var(--accent); }
+
+  /* ===== TABLE ===== */
+  .tbl-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+  thead th { background: var(--primary); color: white; padding: 10px 12px; text-align: left; font-weight: 600; font-size: 0.78rem; white-space: nowrap; }
+  thead th:first-child { border-radius: 8px 0 0 0; }
+  thead th:last-child { border-radius: 0 8px 0 0; }
+  tbody td { padding: 9px 12px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+  tbody tr:hover td { background: #f5f7ff; }
+  .no-data { text-align: center; color: var(--muted); padding: 40px; font-style: italic; }
+
+  /* Badges */
+  .badge { display: inline-block; padding: 2px 9px; border-radius: 10px; font-size: 0.75rem; font-weight: 700; }
+  .badge-pass { background: #e8f5e9; color: var(--success); }
+  .badge-fail { background: #ffebee; color: var(--danger); }
+  .badge-ok   { background: #fff3e0; color: var(--warning); }
+  .badge-exam { background: #e3f2fd; color: var(--accent); }
+  .badge-practice { background: #f3e5f5; color: #6a1b9a; }
+  .badge-easy { background: #e8f5e9; color: var(--success); }
+  .badge-medium { background: #fff3e0; color: var(--warning); }
+  .badge-hard { background: #ffebee; color: var(--danger); }
+  .badge-extreme { background: #f3e5f5; color: #4a148c; }
+
+  /* Buttons */
+  .btn { display: inline-flex; align-items: center; gap: 6px; padding: 9px 18px; border-radius: 8px; font-size: 0.85rem; font-weight: 600; cursor: pointer; border: none; transition: all 0.2s; }
+  .btn:hover { transform: translateY(-1px); box-shadow: 0 3px 10px rgba(0,0,0,0.15); }
+  .btn-primary { background: var(--primary); color: white; }
+  .btn-danger  { background: var(--danger); color: white; }
+  .btn-outline { background: transparent; color: var(--primary); border: 2px solid var(--primary); }
+  .btn-warning { background: var(--warning); color: white; }
+  .btn-sm { padding: 6px 12px; font-size: 0.78rem; }
+  .btn:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
+
+  /* Pagination */
+  .pagination { display: flex; gap: 6px; align-items: center; margin-top: 14px; flex-wrap: wrap; }
+  .page-btn { padding: 5px 11px; border-radius: 6px; border: 2px solid var(--border); background: white; cursor: pointer; font-size: 0.82rem; font-weight: 600; color: var(--muted); transition: all 0.2s; }
+  .page-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
+  .page-btn:hover:not(.active) { border-color: var(--accent); color: var(--accent); }
+  .page-info { font-size: 0.8rem; color: var(--muted); }
+
+  /* User management table */
+  .user-avatar { width: 28px; height: 28px; border-radius: 50%; background: var(--bg); display: inline-flex; align-items: center; justify-content: center; font-size: 0.75rem; overflow: hidden; border: 2px solid var(--border); vertical-align: middle; margin-right: 6px; }
+  .user-avatar img { width: 100%; height: 100%; object-fit: cover; }
+  .streak-flame { font-size: 0.85rem; }
+
+  /* Confirm dialog (simple overlay) */
+  .confirm-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 2000; display: flex; align-items: center; justify-content: center; padding: 16px; }
+  .confirm-box { background: white; border-radius: 14px; padding: 28px 32px; max-width: 380px; width: 100%; box-shadow: 0 16px 48px rgba(0,0,0,0.3); text-align: center; }
+  .confirm-box h3 { color: var(--primary); margin-bottom: 10px; font-size: 1.1rem; }
+  .confirm-box p { color: var(--muted); font-size: 0.88rem; margin-bottom: 20px; line-height: 1.5; }
+  .confirm-box .actions { display: flex; gap: 10px; justify-content: center; }
+
+  /* Toast */
+  .toast { position: fixed; bottom: 24px; right: 24px; background: var(--primary); color: white; padding: 12px 20px; border-radius: 8px; font-size: 0.88rem; font-weight: 600; opacity: 0; transition: opacity 0.3s; z-index: 9999; max-width: 320px; }
+  .toast.show { opacity: 1; }
+
+  ::-webkit-scrollbar { width: 6px; } ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<!-- ===== ADMIN LOGIN ===== -->
+<div id="screen-login">
+  <div class="login-card fade-in">
+    <div class="logo">🔐</div>
+    <h1>Admin Panel</h1>
+    <p>ISTQB Reviewer — Administrator Access</p>
+    <div class="field">
+      <label for="adm-user">Username</label>
+      <input type="text" id="adm-user" placeholder="admin" autocomplete="off">
+    </div>
+    <div class="field">
+      <label for="adm-pass">Password</label>
+      <input type="password" id="adm-pass" placeholder="••••••••" autocomplete="off">
+    </div>
+    <div class="err-msg hidden" id="adm-err">Incorrect credentials. Please try again.</div>
+    <button class="btn btn-primary" style="width:100%;padding:13px;font-size:1rem;border-radius:8px;margin-top:4px" onclick="Admin.login()">Login →</button>
+    <p style="font-size:0.75rem;color:var(--muted);margin-top:16px"><a href="index.html" style="color:var(--muted)">← Back to App</a></p>
+  </div>
+</div>
+
+<!-- ===== ADMIN MAIN ===== -->
+<div id="screen-admin" class="hidden">
+  <header>
+    <h1>🔐 ISTQB Admin Panel</h1>
+    <div class="header-actions">
+      <a href="index.html" class="back-link">← App</a>
+      <span class="admin-badge">Administrator</span>
+      <button class="logout-btn" onclick="Admin.logout()">Logout</button>
+    </div>
+  </header>
+
+  <div class="container">
+    <!-- Stats -->
+    <div class="stats-bar" id="stats-bar">
+      <div class="stat-card"><div class="s-val" id="stat-total-sessions">0</div><div class="s-lbl">Total Sessions</div></div>
+      <div class="stat-card"><div class="s-val" id="stat-total-users">0</div><div class="s-lbl">Registered Users</div></div>
+      <div class="stat-card"><div class="s-val" id="stat-exam-sessions">0</div><div class="s-lbl">Exam Sessions</div></div>
+      <div class="stat-card"><div class="s-val" id="stat-avg-score">0%</div><div class="s-lbl">Avg Score (All)</div></div>
+    </div>
+
+    <!-- Tab bar -->
+    <div class="tab-bar">
+      <div class="tab active" id="tab-sessions" onclick="Admin.showTab('sessions')">📋 All Sessions</div>
+      <div class="tab" id="tab-users" onclick="Admin.showTab('users')">👥 Users</div>
+      <div class="tab" id="tab-leaderboard" onclick="Admin.showTab('leaderboard')">🏆 Leaderboard</div>
+      <div class="tab" id="tab-danger" onclick="Admin.showTab('danger')">🗑 Data Tools</div>
+    </div>
+
+    <!-- ===== SESSIONS TAB ===== -->
+    <div id="tab-panel-sessions">
+      <div class="card">
+        <div class="card-header">
+          <h2>All Session Records</h2>
+          <button class="btn btn-outline btn-sm" onclick="Admin.exportCSV()">⬇ Export CSV</button>
+        </div>
+        <div class="filter-row">
+          <div class="filter-group">
+            <label>Mode</label>
+            <select id="f-mode" onchange="Admin.applyFilters()">
+              <option value="all">All Modes</option>
+              <option value="practice">Practice</option>
+              <option value="exam">Exam</option>
+            </select>
+          </div>
+          <div class="filter-group">
+            <label>Difficulty</label>
+            <select id="f-diff" onchange="Admin.applyFilters()">
+              <option value="all">All</option>
+              <option value="easy">Easy</option>
+              <option value="medium">Medium</option>
+              <option value="hard">Hard</option>
+              <option value="extreme">Extreme</option>
+            </select>
+          </div>
+          <div class="filter-group">
+            <label>User</label>
+            <select id="f-user" onchange="Admin.applyFilters()">
+              <option value="all">All Users</option>
+            </select>
+          </div>
+          <div class="filter-group">
+            <label>Result</label>
+            <select id="f-result" onchange="Admin.applyFilters()">
+              <option value="all">All</option>
+              <option value="pass">Pass</option>
+              <option value="fail">Fail</option>
+            </select>
+          </div>
+          <div class="filter-group">
+            <label>Search</label>
+            <input type="text" id="f-search" placeholder="Username…" oninput="Admin.applyFilters()">
+          </div>
+        </div>
+        <div class="tbl-wrap" id="sessions-table-wrap">
+          <div class="no-data">Loading…</div>
+        </div>
+        <div class="pagination" id="sessions-pagination"></div>
+      </div>
+    </div>
+
+    <!-- ===== USERS TAB ===== -->
+    <div id="tab-panel-users" class="hidden">
+      <div class="card">
+        <div class="card-header">
+          <h2>Registered Users</h2>
+          <span id="user-count-label" style="font-size:0.85rem;color:var(--muted)"></span>
+        </div>
+        <div class="tbl-wrap" id="users-table-wrap">
+          <div class="no-data">Loading…</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== LEADERBOARD TAB ===== -->
+    <div id="tab-panel-leaderboard" class="hidden">
+      <div class="card">
+        <div class="card-header">
+          <h2>Leaderboard Records</h2>
+          <span style="font-size:0.82rem;color:var(--muted)">Raw leaderboard index entries</span>
+        </div>
+        <div class="filter-row">
+          <div class="filter-group">
+            <label>Mode</label>
+            <select id="lb-f-mode" onchange="Admin.renderLbTable()">
+              <option value="all">All</option>
+              <option value="practice">Practice</option>
+              <option value="exam">Exam</option>
+            </select>
+          </div>
+          <div class="filter-group">
+            <label>User</label>
+            <select id="lb-f-user" onchange="Admin.renderLbTable()">
+              <option value="all">All Users</option>
+            </select>
+          </div>
+        </div>
+        <div class="tbl-wrap" id="lb-table-wrap"></div>
+        <div class="pagination" id="lb-pagination"></div>
+      </div>
+    </div>
+
+    <!-- ===== DATA TOOLS TAB ===== -->
+    <div id="tab-panel-danger" class="hidden">
+      <div class="card">
+        <h2 style="color:var(--danger);margin-bottom:20px">⚠ Data Management Tools</h2>
+
+        <div style="display:flex;flex-direction:column;gap:16px">
+
+          <div style="border:2px solid var(--border);border-radius:10px;padding:18px">
+            <div style="font-weight:700;margin-bottom:6px">Clear Sessions for a Specific User</div>
+            <div style="font-size:0.85rem;color:var(--muted);margin-bottom:12px">Removes all session records (and leaderboard entries) for the selected user.</div>
+            <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+              <select id="clear-user-select" style="padding:9px 14px;border:2px solid var(--border);border-radius:8px;font-size:0.88rem;outline:none;min-width:180px">
+                <option value="">— Select user —</option>
+              </select>
+              <button class="btn btn-warning btn-sm" onclick="Admin.clearUserData()">Clear This User's Scores</button>
+            </div>
+          </div>
+
+          <div style="border:2px solid var(--border);border-radius:10px;padding:18px">
+            <div style="font-weight:700;margin-bottom:6px">Clear All Sessions by Mode</div>
+            <div style="font-size:0.85rem;color:var(--muted);margin-bottom:12px">Deletes all session records matching the selected mode from both the session log and leaderboard index.</div>
+            <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+              <select id="clear-mode-select" style="padding:9px 14px;border:2px solid var(--border);border-radius:8px;font-size:0.88rem;outline:none">
+                <option value="practice">Practice Sessions</option>
+                <option value="exam">Exam Sessions</option>
+              </select>
+              <button class="btn btn-warning btn-sm" onclick="Admin.clearByMode()">Clear Mode Data</button>
+            </div>
+          </div>
+
+          <div style="border:2px solid #ffcdd2;border-radius:10px;padding:18px;background:#fff5f5">
+            <div style="font-weight:700;color:var(--danger);margin-bottom:6px">⛔ Clear ALL Leaderboard Scores</div>
+            <div style="font-size:0.85rem;color:var(--muted);margin-bottom:12px">Wipes the entire leaderboard index. Session records are kept. This cannot be undone.</div>
+            <button class="btn btn-danger btn-sm" onclick="Admin.clearAllLeaderboard()">Clear All Leaderboard Data</button>
+          </div>
+
+          <div style="border:2px solid #ffcdd2;border-radius:10px;padding:18px;background:#fff5f5">
+            <div style="font-weight:700;color:var(--danger);margin-bottom:6px">⛔ Clear ALL Session Records</div>
+            <div style="font-size:0.85rem;color:var(--muted);margin-bottom:12px">Wipes the full session log AND the leaderboard index. User profiles are kept. This cannot be undone.</div>
+            <button class="btn btn-danger btn-sm" onclick="Admin.clearAllSessions()">Clear ALL Session Data</button>
+          </div>
+
+          <div style="border:2px solid #ffcdd2;border-radius:10px;padding:18px;background:#fff5f5">
+            <div style="font-weight:700;color:var(--danger);margin-bottom:6px">⛔ Delete a User Profile</div>
+            <div style="font-size:0.85rem;color:var(--muted);margin-bottom:12px">Removes the user's profile (avatar, Entry ID, streak). Their score records are kept unless cleared separately.</div>
+            <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+              <select id="delete-user-select" style="padding:9px 14px;border:2px solid var(--border);border-radius:8px;font-size:0.88rem;outline:none;min-width:180px">
+                <option value="">— Select user —</option>
+              </select>
+              <button class="btn btn-danger btn-sm" onclick="Admin.deleteUser()">Delete Profile</button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /container -->
+</div>
+
+<!-- Confirm dialog -->
+<div id="confirm-overlay" class="confirm-overlay hidden">
+  <div class="confirm-box">
+    <h3 id="confirm-title">Confirm Action</h3>
+    <p id="confirm-msg">Are you sure?</p>
+    <div class="actions">
+      <button class="btn btn-danger" id="confirm-yes">Yes, proceed</button>
+      <button class="btn btn-outline" onclick="Admin.hideConfirm()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const Admin = (() => {
+  // ---- Storage keys (must match index.html) ----
+  const LS_LB       = 'istqb_leaderboard_v3';
+  const LS_USERS    = 'istqb_users_v1';
+  const LS_SESSIONS = 'istqb_sessions_v1';
+  const ADMIN_USER  = 'admin';
+  const ADMIN_PASS  = 'admin1104';
+
+  // ---- Pagination state ----
+  let sessPage = 1;
+  const SESS_PER_PAGE = 25;
+  let filteredSessions = [];
+
+  let lbPage = 1;
+  const LB_PER_PAGE = 30;
+  let filteredLb = [];
+
+  let currentTab = 'sessions';
+
+  // ---- Storage helpers ----
+  function loadSessions() { try { return JSON.parse(localStorage.getItem(LS_SESSIONS) || '[]'); } catch(e) { return []; } }
+  function saveSessions(d) { localStorage.setItem(LS_SESSIONS, JSON.stringify(d)); }
+  function loadLB()       { try { return JSON.parse(localStorage.getItem(LS_LB) || '[]'); } catch(e) { return []; } }
+  function saveLB(d)      { localStorage.setItem(LS_LB, JSON.stringify(d)); }
+  function loadUsers()    { try { return JSON.parse(localStorage.getItem(LS_USERS) || '{}'); } catch(e) { return {}; } }
+  function saveUsers(d)   { localStorage.setItem(LS_USERS, JSON.stringify(d)); }
+
+  // ---- Auth ----
+  function login() {
+    const u = document.getElementById('adm-user').value.trim();
+    const p = document.getElementById('adm-pass').value;
+    const err = document.getElementById('adm-err');
+    if (u === ADMIN_USER && p === ADMIN_PASS) {
+      err.classList.add('hidden');
+      document.getElementById('screen-login').classList.add('hidden');
+      document.getElementById('screen-admin').classList.remove('hidden');
+      initAdmin();
+    } else {
+      err.classList.remove('hidden');
+      document.getElementById('adm-pass').classList.add('error');
+    }
+  }
+
+  function logout() {
+    document.getElementById('screen-admin').classList.add('hidden');
+    document.getElementById('screen-login').classList.remove('hidden');
+    document.getElementById('adm-user').value = '';
+    document.getElementById('adm-pass').value = '';
+  }
+
+  // ---- Init ----
+  function initAdmin() {
+    refreshStats();
+    populateUserDropdowns();
+    showTab('sessions');
+  }
+
+  function refreshStats() {
+    const sessions = loadSessions();
+    const users    = loadUsers();
+    const lb       = loadLB();
+    const examCount = sessions.filter(s => s.mode === 'exam').length;
+    const avgPct = sessions.length ? Math.round(sessions.reduce((a,b) => a + (b.pct||0), 0) / sessions.length) : 0;
+    document.getElementById('stat-total-sessions').textContent = sessions.length.toLocaleString();
+    document.getElementById('stat-total-users').textContent    = Object.keys(users).length;
+    document.getElementById('stat-exam-sessions').textContent  = examCount.toLocaleString();
+    document.getElementById('stat-avg-score').textContent      = avgPct + '%';
+  }
+
+  function populateUserDropdowns() {
+    const sessions = loadSessions();
+    const users    = loadUsers();
+    const names    = [...new Set([...Object.keys(users), ...sessions.map(s => s.username)])].sort();
+
+    ['f-user','lb-f-user','clear-user-select','delete-user-select'].forEach(id => {
+      const sel = document.getElementById(id);
+      const defaultOpt = sel.options[0];
+      sel.innerHTML = '';
+      sel.appendChild(defaultOpt);
+      names.forEach(n => {
+        const opt = document.createElement('option');
+        opt.value = n; opt.textContent = n;
+        sel.appendChild(opt);
+      });
+    });
+  }
+
+  // ---- Tab switching ----
+  function showTab(tab) {
+    currentTab = tab;
+    ['sessions','users','leaderboard','danger'].forEach(t => {
+      document.getElementById('tab-panel-' + t).classList.toggle('hidden', t !== tab);
+      document.getElementById('tab-' + t).classList.toggle('active', t === tab);
+    });
+    if (tab === 'sessions')    { applyFilters(); }
+    if (tab === 'users')       { renderUsersTable(); }
+    if (tab === 'leaderboard') { renderLbTable(); }
+    if (tab === 'danger')      { /* static */ }
+  }
+
+  // ---- SESSIONS TABLE ----
+  function applyFilters() {
+    sessPage = 1;
+    const sessions = loadSessions();
+    const fMode   = document.getElementById('f-mode').value;
+    const fDiff   = document.getElementById('f-diff').value;
+    const fUser   = document.getElementById('f-user').value;
+    const fResult = document.getElementById('f-result').value;
+    const fSearch = document.getElementById('f-search').value.trim().toLowerCase();
+
+    filteredSessions = sessions.filter(s => {
+      if (fMode !== 'all' && s.mode !== fMode) return false;
+      if (fDiff !== 'all' && s.difficulty !== fDiff) return false;
+      if (fUser !== 'all' && s.username !== fUser) return false;
+      if (fResult === 'pass' && !s.pass) return false;
+      if (fResult === 'fail' &&  s.pass) return false;
+      if (fSearch && !s.username.toLowerCase().includes(fSearch)) return false;
+      return true;
+    });
+
+    renderSessionsTable();
+  }
+
+  function renderSessionsTable() {
+    const wrap = document.getElementById('sessions-table-wrap');
+    const pag  = document.getElementById('sessions-pagination');
+
+    if (filteredSessions.length === 0) {
+      wrap.innerHTML = '<div class="no-data">No records match the current filters.</div>';
+      pag.innerHTML = '';
+      return;
+    }
+
+    const totalPages = Math.ceil(filteredSessions.length / SESS_PER_PAGE);
+    if (sessPage > totalPages) sessPage = totalPages;
+    const slice = filteredSessions.slice((sessPage - 1) * SESS_PER_PAGE, sessPage * SESS_PER_PAGE);
+
+    let html = '<table><thead><tr><th>#</th><th>Session ID</th><th>User</th><th>Mode</th><th>Difficulty</th><th>Score</th><th>Result</th><th>Date</th><th>Time</th><th>Duration</th><th>Actions</th></tr></thead><tbody>';
+    slice.forEach((s, i) => {
+      const globalIdx = (sessPage - 1) * SESS_PER_PAGE + i + 1;
+      const modeBadge = s.mode === 'exam' ? '<span class="badge badge-exam">Exam</span>' : '<span class="badge badge-practice">Practice</span>';
+      const diffStr   = s.mode === 'exam' ? '—' : (s.difficulty || 'all');
+      const diffBadge = diffStr !== '—' ? '<span class="badge badge-' + diffStr + '">' + cap(diffStr) + '</span>' : '—';
+      const resBadge  = s.pass ? '<span class="badge badge-pass">PASS</span>' : '<span class="badge badge-fail">FAIL</span>';
+      const dur       = s.timeTaken ? fmtDur(s.timeTaken) : '—';
+      const sid       = s.sessionId ? ('<span style="font-size:0.72rem;color:var(--muted);font-family:monospace">' + escHtml(s.sessionId) + '</span>') : '—';
+      html += '<tr>';
+      html += '<td style="color:var(--muted);font-size:0.8rem">' + globalIdx + '</td>';
+      html += '<td>' + sid + '</td>';
+      html += '<td><strong>' + escHtml(s.username) + '</strong></td>';
+      html += '<td>' + modeBadge + '</td>';
+      html += '<td>' + diffBadge + '</td>';
+      html += '<td><strong>' + s.pct + '%</strong> <span style="font-size:0.78rem;color:var(--muted)">(' + s.score + '/' + s.total + ')</span></td>';
+      html += '<td>' + resBadge + '</td>';
+      html += '<td style="font-size:0.8rem;white-space:nowrap">' + (s.date || '—') + '</td>';
+      html += '<td style="font-size:0.8rem;white-space:nowrap">' + (s.time || '—') + '</td>';
+      html += '<td style="font-size:0.8rem">' + dur + '</td>';
+      html += '<td><button class="btn btn-danger btn-sm" onclick="Admin.deleteSession(\'' + escAttr(s.sessionId) + '\')">Delete</button></td>';
+      html += '</tr>';
+    });
+    html += '</tbody></table>';
+    wrap.innerHTML = html;
+
+    // Pagination
+    let pagHtml = '<span class="page-info">' + filteredSessions.length + ' records · Page ' + sessPage + ' of ' + totalPages + '</span>';
+    if (totalPages > 1) {
+      if (sessPage > 1) pagHtml += '<button class="page-btn" onclick="Admin.sessGoPage(' + (sessPage - 1) + ')">‹ Prev</button>';
+      const start = Math.max(1, sessPage - 2), end = Math.min(totalPages, sessPage + 2);
+      for (let p = start; p <= end; p++) pagHtml += '<button class="page-btn' + (p === sessPage ? ' active' : '') + '" onclick="Admin.sessGoPage(' + p + ')">' + p + '</button>';
+      if (sessPage < totalPages) pagHtml += '<button class="page-btn" onclick="Admin.sessGoPage(' + (sessPage + 1) + ')">Next ›</button>';
+    }
+    pag.innerHTML = pagHtml;
+  }
+
+  function sessGoPage(p) { sessPage = p; renderSessionsTable(); }
+
+  function deleteSession(sid) {
+    showConfirm('Delete Session', 'Remove this session record permanently?', () => {
+      let sessions = loadSessions();
+      sessions = sessions.filter(s => s.sessionId !== sid);
+      saveSessions(sessions);
+      // Also remove from LB
+      let lb = loadLB();
+      // Can't easily match by sessionId in LB (LB doesn't store it), so skip LB deletion for individual records
+      refreshStats();
+      applyFilters();
+      showToast('Session deleted.');
+    });
+  }
+
+  // ---- USERS TABLE ----
+  function renderUsersTable() {
+    const users = loadUsers();
+    const sessions = loadSessions();
+    const names = Object.keys(users).sort();
+    document.getElementById('user-count-label').textContent = names.length + ' registered user' + (names.length !== 1 ? 's' : '');
+
+    if (names.length === 0) {
+      document.getElementById('users-table-wrap').innerHTML = '<div class="no-data">No registered users yet.</div>';
+      return;
+    }
+
+    let html = '<table><thead><tr><th>Avatar</th><th>Username</th><th>Streak</th><th>Last Active</th><th>Sessions</th><th>Avg Score</th><th>Best Score</th><th>Actions</th></tr></thead><tbody>';
+    names.forEach(name => {
+      const u = users[name];
+      const userSessions = sessions.filter(s => s.username === name);
+      const avgPct = userSessions.length ? Math.round(userSessions.reduce((a,b) => a+(b.pct||0),0) / userSessions.length) : null;
+      const bestPct = userSessions.length ? Math.max(...userSessions.map(s => s.pct||0)) : null;
+      const streak = u.streak || 0;
+      const avInner = u.avatar ? '<img src="' + u.avatar + '">' : name.charAt(0).toUpperCase();
+      const avHtml = '<span class="user-avatar">' + avInner + '</span>';
+      const streakHtml = streak >= 3 ? streak + ' <span class="streak-flame">🔥</span>' : streak;
+      html += '<tr>';
+      html += '<td>' + avHtml + '</td>';
+      html += '<td><strong>' + escHtml(name) + '</strong></td>';
+      html += '<td>' + streakHtml + '</td>';
+      html += '<td style="font-size:0.82rem;color:var(--muted)">' + (u.lastActiveDate || 'Never') + '</td>';
+      html += '<td>' + userSessions.length + '</td>';
+      html += '<td>' + (avgPct !== null ? avgPct + '%' : '—') + '</td>';
+      html += '<td>' + (bestPct !== null ? '<strong>' + bestPct + '%</strong>' : '—') + '</td>';
+      html += '<td style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn btn-warning btn-sm" onclick="Admin.clearOneUserScores(\'' + escAttr(name) + '\')">Clear Scores</button> <button class="btn btn-danger btn-sm" onclick="Admin.deleteOneUser(\'' + escAttr(name) + '\')">Delete User</button></td>';
+      html += '</tr>';
+    });
+    html += '</tbody></table>';
+    document.getElementById('users-table-wrap').innerHTML = html;
+  }
+
+  // ---- LEADERBOARD TABLE ----
+  function renderLbTable() {
+    const lb     = loadLB();
+    const fMode  = document.getElementById('lb-f-mode').value;
+    const fUser  = document.getElementById('lb-f-user').value;
+
+    filteredLb = lb.filter(e => {
+      if (fMode !== 'all' && e.mode !== fMode) return false;
+      if (fUser !== 'all' && e.username !== fUser) return false;
+      return true;
+    }).sort((a,b) => (b.ts||0) - (a.ts||0)); // newest first
+
+    const wrap = document.getElementById('lb-table-wrap');
+    const pag  = document.getElementById('lb-pagination');
+
+    if (filteredLb.length === 0) {
+      wrap.innerHTML = '<div class="no-data">No leaderboard entries match the filters.</div>';
+      pag.innerHTML = ''; return;
+    }
+
+    const totalPages = Math.ceil(filteredLb.length / LB_PER_PAGE);
+    if (lbPage > totalPages) lbPage = totalPages;
+    const slice = filteredLb.slice((lbPage - 1) * LB_PER_PAGE, lbPage * LB_PER_PAGE);
+
+    let html = '<table><thead><tr><th>#</th><th>User</th><th>Mode</th><th>Difficulty</th><th>Score</th><th>Result</th><th>Date</th></tr></thead><tbody>';
+    slice.forEach((e, i) => {
+      const globalIdx = (lbPage - 1) * LB_PER_PAGE + i + 1;
+      const modeBadge = e.mode === 'exam' ? '<span class="badge badge-exam">Exam</span>' : '<span class="badge badge-practice">Practice</span>';
+      const diffStr   = e.mode === 'exam' ? '—' : (e.difficulty || 'all');
+      const diffBadge = diffStr !== '—' ? '<span class="badge badge-' + diffStr + '">' + cap(diffStr) + '</span>' : '—';
+      const resBadge  = e.pass ? '<span class="badge badge-pass">PASS</span>' : '<span class="badge badge-fail">FAIL</span>';
+      html += '<tr>';
+      html += '<td style="color:var(--muted);font-size:0.8rem">' + globalIdx + '</td>';
+      html += '<td><strong>' + escHtml(e.username) + '</strong></td>';
+      html += '<td>' + modeBadge + '</td>';
+      html += '<td>' + diffBadge + '</td>';
+      html += '<td><strong>' + e.pct + '%</strong> <span style="font-size:0.78rem;color:var(--muted)">(' + e.score + '/' + e.total + ')</span></td>';
+      html += '<td>' + resBadge + '</td>';
+      html += '<td style="font-size:0.8rem">' + (e.date || '—') + '</td>';
+      html += '</tr>';
+    });
+    html += '</tbody></table>';
+    wrap.innerHTML = html;
+
+    let pagHtml = '<span class="page-info">' + filteredLb.length + ' entries · Page ' + lbPage + ' of ' + totalPages + '</span>';
+    if (totalPages > 1) {
+      if (lbPage > 1) pagHtml += '<button class="page-btn" onclick="Admin.lbGoPage(' + (lbPage - 1) + ')">‹ Prev</button>';
+      const start = Math.max(1, lbPage - 2), end = Math.min(totalPages, lbPage + 2);
+      for (let p = start; p <= end; p++) pagHtml += '<button class="page-btn' + (p === lbPage ? ' active' : '') + '" onclick="Admin.lbGoPage(' + p + ')">' + p + '</button>';
+      if (lbPage < totalPages) pagHtml += '<button class="page-btn" onclick="Admin.lbGoPage(' + (lbPage + 1) + ')">Next ›</button>';
+    }
+    pag.innerHTML = pagHtml;
+  }
+
+  function lbGoPage(p) { lbPage = p; renderLbTable(); }
+
+  // ---- DATA TOOLS ----
+  function clearUserData() {
+    const name = document.getElementById('clear-user-select').value;
+    if (!name) { showToast('Please select a user first.'); return; }
+    showConfirm('Clear User Scores', 'Delete all session records and leaderboard entries for "' + name + '"?', () => {
+      let sessions = loadSessions(); sessions = sessions.filter(s => s.username !== name); saveSessions(sessions);
+      let lb = loadLB(); lb = lb.filter(e => e.username !== name); saveLB(lb);
+      refreshStats(); populateUserDropdowns(); if (currentTab === 'sessions') applyFilters(); if (currentTab === 'users') renderUsersTable(); if (currentTab === 'leaderboard') renderLbTable();
+      showToast('Scores cleared for ' + name + '.');
+    });
+  }
+
+  function clearOneUserScores(name) {
+    showConfirm('Clear Scores', 'Delete all records for "' + name + '"?', () => {
+      let sessions = loadSessions(); sessions = sessions.filter(s => s.username !== name); saveSessions(sessions);
+      let lb = loadLB(); lb = lb.filter(e => e.username !== name); saveLB(lb);
+      refreshStats(); renderUsersTable();
+      showToast('Scores cleared for ' + name + '.');
+    });
+  }
+
+  function deleteOneUser(name) {
+    showConfirm('Delete User Profile', 'Remove the profile for "' + name + '"? Score records are NOT deleted.', () => {
+      const users = loadUsers(); delete users[name]; saveUsers(users);
+      refreshStats(); populateUserDropdowns(); renderUsersTable();
+      showToast('Profile deleted for ' + name + '.');
+    });
+  }
+
+  function clearByMode() {
+    const m = document.getElementById('clear-mode-select').value;
+    showConfirm('Clear ' + cap(m) + ' Data', 'Delete all ' + m + ' session records and leaderboard entries?', () => {
+      let sessions = loadSessions(); sessions = sessions.filter(s => s.mode !== m); saveSessions(sessions);
+      let lb = loadLB(); lb = lb.filter(e => e.mode !== m); saveLB(lb);
+      refreshStats(); if (currentTab === 'sessions') applyFilters(); if (currentTab === 'leaderboard') renderLbTable();
+      showToast(cap(m) + ' data cleared.');
+    });
+  }
+
+  function clearAllLeaderboard() {
+    showConfirm('Clear All Leaderboard', 'Wipe the ENTIRE leaderboard index? This cannot be undone.', () => {
+      saveLB([]);
+      refreshStats(); if (currentTab === 'leaderboard') renderLbTable();
+      showToast('Leaderboard cleared.');
+    });
+  }
+
+  function clearAllSessions() {
+    showConfirm('Clear ALL Data', 'Delete ALL session records AND the leaderboard? This CANNOT be undone.', () => {
+      saveSessions([]); saveLB([]);
+      refreshStats(); if (currentTab === 'sessions') applyFilters(); if (currentTab === 'leaderboard') renderLbTable();
+      showToast('All session data cleared.');
+    });
+  }
+
+  function deleteUser() {
+    const name = document.getElementById('delete-user-select').value;
+    if (!name) { showToast('Please select a user first.'); return; }
+    deleteOneUser(name);
+  }
+
+  // ---- EXPORT CSV ----
+  function exportCSV() {
+    const sessions = filteredSessions.length ? filteredSessions : loadSessions();
+    if (!sessions.length) { showToast('No data to export.'); return; }
+    const cols = ['sessionId','username','mode','difficulty','score','total','pct','pass','date','time','timeTaken'];
+    let csv = cols.join(',') + '\n';
+    sessions.forEach(s => {
+      csv += cols.map(c => {
+        const v = s[c] === undefined ? '' : s[c];
+        const str = String(v).replace(/"/g, '""');
+        return '"' + str + '"';
+      }).join(',') + '\n';
+    });
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'istqb_sessions_' + new Date().toISOString().slice(0,10) + '.csv';
+    a.click(); URL.revokeObjectURL(url);
+    showToast('CSV exported (' + sessions.length + ' rows).');
+  }
+
+  // ---- CONFIRM DIALOG ----
+  let confirmCallback = null;
+  function showConfirm(title, msg, cb) {
+    confirmCallback = cb;
+    document.getElementById('confirm-title').textContent = title;
+    document.getElementById('confirm-msg').textContent   = msg;
+    document.getElementById('confirm-yes').onclick = () => { hideConfirm(); cb(); };
+    document.getElementById('confirm-overlay').classList.remove('hidden');
+  }
+  function hideConfirm() { document.getElementById('confirm-overlay').classList.add('hidden'); confirmCallback = null; }
+
+  // ---- TOAST ----
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg; t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 3000);
+  }
+
+  // ---- UTILS ----
+  function escHtml(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  function escAttr(s) { return String(s).replace(/'/g,"\\'"); }
+  function cap(s)     { return s ? s.charAt(0).toUpperCase() + s.slice(1) : ''; }
+  function fmtDur(sec){ if (!sec) return '—'; const m = Math.floor(sec/60), s = sec%60; return m + 'm ' + s + 's'; }
+
+  // ---- ENTER KEY on login ----
+  document.getElementById('adm-pass').addEventListener('keypress', e => { if (e.key === 'Enter') login(); });
+  document.getElementById('adm-user').addEventListener('keypress', e => { if (e.key === 'Enter') document.getElementById('adm-pass').focus(); });
+  ['adm-user','adm-pass'].forEach(id => {
+    document.getElementById(id).addEventListener('input', function() {
+      this.classList.remove('error');
+      document.getElementById('adm-err').classList.add('hidden');
+    });
+  });
+
+  // Close confirm on overlay click
+  document.getElementById('confirm-overlay').addEventListener('click', function(e) {
+    if (e.target === this) hideConfirm();
+  });
+
+  return {
+    login, logout,
+    showTab, applyFilters, sessGoPage,
+    renderLbTable, lbGoPage,
+    deleteSession,
+    renderUsersTable, clearOneUserScores, deleteOneUser,
+    clearUserData, clearByMode, clearAllLeaderboard, clearAllSessions, deleteUser,
+    exportCSV, hideConfirm
+  };
+})();
+</script>
+</body>
+</html>
