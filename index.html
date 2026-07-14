@@ -378,6 +378,13 @@
   /* Study Mode note */
   .study-note { background: #fff8e1; border: 1px solid #ffd54f; border-radius: 8px; padding: 10px 14px; font-size: 0.82rem; color: #5d4037; margin-top: 12px; }
 
+  /* ===== FOLLOW BUTTON ===== */
+  .follow-btn { padding: 3px 10px; border-radius: 12px; font-size: 0.72rem; font-weight: 700; cursor: pointer; border: 1.5px solid; transition: all 0.15s; white-space: nowrap; }
+  .follow-btn.not-following { border-color: var(--accent); color: var(--accent); background: transparent; }
+  .follow-btn.not-following:hover { background: var(--accent); color: white; }
+  .follow-btn.is-following { border-color: var(--success); color: var(--success); background: #e8f5e9; }
+  .follow-btn.is-following:hover { background: #ffebee; border-color: var(--danger); color: var(--danger); }
+
   /* ===== PREPAREDNESS METER ===== */
   .prep-meter-wrap { margin: 6px 0 16px; }
   .prep-meter-track { background: #e0e0e0; border-radius: 8px; height: 18px; overflow: hidden; position: relative; }
@@ -662,8 +669,9 @@
           <div class="lb-tabs">
             <div class="lb-tab active" id="lb-tab-practice" onclick="App.setLbMode('practice')">📝 Practice</div>
             <div class="lb-tab" id="lb-tab-exam" onclick="App.setLbMode('exam')">🎯 Exam</div>
+            <div class="lb-tab" id="lb-tab-following" onclick="App.setLbMode('following')">👥 Following</div>
           </div>
-          <div class="lb-period-tabs">
+          <div class="lb-period-tabs" id="lb-period-row">
             <div class="lb-period-tab active" id="lb-period-all" onclick="App.setLbPeriod('all')">All Time</div>
             <div class="lb-period-tab" id="lb-period-daily" onclick="App.setLbPeriod('daily')">Daily</div>
             <div class="lb-period-tab" id="lb-period-weekly" onclick="App.setLbPeriod('weekly')">Weekly</div>
@@ -790,6 +798,34 @@ const App = (() => {
     try {
       await _db.collection('sessions').doc(record.sessionId).set(record);
     } catch(e) { console.error('saveSession', e); }
+  }
+
+  // ==============================================================
+  // FOLLOW SYSTEM
+  // ==============================================================
+  // following list is stored as an array field on the user's own doc
+  async function loadFollowing() {
+    const me = await getUser(username);
+    return (me && Array.isArray(me.following)) ? me.following : [];
+  }
+
+  async function followUser(target) {
+    const following = await loadFollowing();
+    if (following.includes(target)) return;
+    following.push(target);
+    await upsertUser(username, { following });
+    if (_cachedUsers[username]) _cachedUsers[username].following = following;
+    showToast('Following ' + target);
+    renderLeaderboard();
+  }
+
+  async function unfollowUser(target) {
+    const following = await loadFollowing();
+    const updated = following.filter(n => n !== target);
+    await upsertUser(username, { following: updated });
+    if (_cachedUsers[username]) _cachedUsers[username].following = updated;
+    showToast('Unfollowed ' + target);
+    renderLeaderboard();
   }
 
   // ==============================================================
@@ -1520,12 +1556,13 @@ const App = (() => {
   // ==============================================================
   function setLbMode(m) {
     lbMode = m;
-    ['practice','exam'].forEach(t => {
+    ['practice','exam','following'].forEach(t => {
       document.getElementById('lb-tab-' + t).classList.toggle('active', t === m);
     });
-    // Show/hide difficulty tabs (only for practice)
+    // Show/hide difficulty tabs (only for practice), period row (not for following)
     document.getElementById('lb-diff-tabs').style.display = m === 'practice' ? 'flex' : 'none';
-    if (m === 'exam') lbDiff = 'all';
+    document.getElementById('lb-period-row').style.display = m === 'following' ? 'none' : '';
+    if (m !== 'practice') lbDiff = 'all';
     renderLeaderboard();
   }
 
@@ -1567,20 +1604,29 @@ const App = (() => {
     const container = document.getElementById('lb-content');
     container.innerHTML = '<div class="no-data">Loading…</div>';
 
-    let lb = await loadLB();
+    // Load leaderboard + all user profiles + current user's following list in parallel
+    const [allLb, users, following] = await Promise.all([loadLB(), loadUsers(), loadFollowing()]);
+    Object.assign(_cachedUsers, users);
 
-    // Filter by mode
-    lb = lb.filter(e => e.mode === lbMode);
+    let lb = allLb;
 
-    // Filter by difficulty (practice only)
-    if (lbMode === 'practice' && lbDiff !== 'all') {
-      lb = lb.filter(e => e.difficulty === lbDiff);
-    }
+    if (lbMode === 'following') {
+      // Show best score per followed user across all modes
+      lb = lb.filter(e => following.includes(e.username));
+    } else {
+      // Filter by mode
+      lb = lb.filter(e => e.mode === lbMode);
 
-    // Filter by period
-    if (lbPeriod !== 'all') {
-      const start = getPeriodStart(lbPeriod);
-      lb = lb.filter(e => e.ts && e.ts >= start);
+      // Filter by difficulty (practice only)
+      if (lbMode === 'practice' && lbDiff !== 'all') {
+        lb = lb.filter(e => e.difficulty === lbDiff);
+      }
+
+      // Filter by period
+      if (lbPeriod !== 'all') {
+        const start = getPeriodStart(lbPeriod);
+        lb = lb.filter(e => e.ts && e.ts >= start);
+      }
     }
 
     // Sort: best % first, then best score
@@ -1594,23 +1640,24 @@ const App = (() => {
     });
 
     const periodLabel = { all: 'All Time', daily: 'Today', weekly: 'This Week', monthly: 'This Month' }[lbPeriod];
-    const modeLabel = lbMode === 'exam' ? '🎯 Exam' : '📝 Practice';
+    const modeLabel = lbMode === 'exam' ? '🎯 Exam' : lbMode === 'following' ? '👥 Following' : '📝 Practice';
     const diffLabel = lbMode === 'practice' && lbDiff !== 'all' ? ' · ' + lbDiff.charAt(0).toUpperCase() + lbDiff.slice(1) : '';
 
     if (ranked.length === 0) {
-      container.innerHTML = '<div class="no-data">No scores for ' + modeLabel + diffLabel + ' — ' + periodLabel + '.<br>Complete a session to appear here!</div>';
+      const emptyMsg = lbMode === 'following'
+        ? 'You\'re not following anyone yet. Hit <strong>Follow +</strong> on any player in the leaderboard.'
+        : 'No scores for ' + modeLabel + diffLabel + ' — ' + periodLabel + '.<br>Complete a session to appear here!';
+      container.innerHTML = '<div class="no-data">' + emptyMsg + '</div>';
       return;
     }
 
-    // Load all users fresh so avatars/streaks from other devices show correctly
-    const users = await loadUsers();
-    Object.assign(_cachedUsers, users);
     const top = ranked.slice(0, 50);
 
-    let html = '<p style="font-size:0.8rem;color:var(--muted);margin-bottom:12px">' + modeLabel + diffLabel + ' · ' + periodLabel + ' · Top ' + top.length + ' learners</p>';
+    const subLabel = lbMode === 'following' ? ' · ' + following.length + ' following' : diffLabel + ' · ' + periodLabel;
+    let html = '<p style="font-size:0.8rem;color:var(--muted);margin-bottom:12px">' + modeLabel + subLabel + ' · Top ' + top.length + ' learners</p>';
     html += '<div style="overflow-x:auto"><table class="lb-table"><thead><tr><th>Rank</th><th>Player</th><th>Score</th>';
     if (lbMode === 'practice') html += '<th>Difficulty</th>';
-    html += '<th>Date</th></tr></thead><tbody>';
+    html += '<th>Date</th><th></th></tr></thead><tbody>';
 
     top.forEach((entry, i) => {
       const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : (i + 1);
@@ -1619,6 +1666,7 @@ const App = (() => {
       const userProfile = users[entry.username] || {};
       const streak = getStreakCached(entry.username);
       const hasFlame = streak >= 3;
+      const isFollowing = following.includes(entry.username);
 
       // Avatar cell
       let avatarHtml = '';
@@ -1633,6 +1681,12 @@ const App = (() => {
 
       const streakHtml = hasFlame ? ' <span class="streak-badge flame-emoji" title="' + streak + '-day streak">🔥</span>' : '';
 
+      // Follow button (hidden for self)
+      const followBtn = isMe ? '' :
+        isFollowing
+          ? '<button class="follow-btn is-following" onclick="App.unfollowUser(\'' + escapeHtml(entry.username) + '\')" title="Unfollow">Following ✓</button>'
+          : '<button class="follow-btn not-following" onclick="App.followUser(\'' + escapeHtml(entry.username) + '\')" title="Follow">Follow +</button>';
+
       html += '<tr' + (isMe ? ' class="highlight"' : '') + '>';
       html += '<td><span class="rank-medal">' + medal + '</span></td>';
       html += '<td style="display:flex;align-items:center;gap:8px;min-width:140px">' + avatarHtml + '<span>' + escapeHtml(entry.username) + streakHtml + (isMe ? ' <span style="font-size:0.72rem;color:var(--accent)">◀ You</span>' : '') + '</span></td>';
@@ -1642,6 +1696,7 @@ const App = (() => {
         html += '<td style="font-size:0.8rem;text-transform:capitalize">' + dBadge + '</td>';
       }
       html += '<td style="font-size:0.8rem;color:var(--muted)">' + entry.date + '</td>';
+      html += '<td>' + followBtn + '</td>';
       html += '</tr>';
     });
 
@@ -1726,6 +1781,7 @@ const App = (() => {
     showSection, selectMode, setDiff, startSession,
     selectAnswer, nextQuestion, finishSession, confirmQuit,
     setLbMode, setLbPeriod, setLbDiff,
+    followUser, unfollowUser,
     openProfile, closeProfile, saveProfile
   };
 })();
