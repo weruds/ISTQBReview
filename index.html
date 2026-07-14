@@ -378,6 +378,27 @@
   /* Study Mode note */
   .study-note { background: #fff8e1; border: 1px solid #ffd54f; border-radius: 8px; padding: 10px 14px; font-size: 0.82rem; color: #5d4037; margin-top: 12px; }
 
+  /* ===== PREPAREDNESS METER ===== */
+  .prep-meter-wrap { margin: 6px 0 16px; }
+  .prep-meter-track { background: #e0e0e0; border-radius: 8px; height: 18px; overflow: hidden; position: relative; }
+  .prep-meter-fill { height: 100%; border-radius: 8px; transition: width 0.8s ease; }
+  .prep-fill-low    { background: linear-gradient(90deg, #c62828, #e53935); }
+  .prep-fill-fair   { background: linear-gradient(90deg, #e65100, #ff6d00); }
+  .prep-fill-good   { background: linear-gradient(90deg, #f9a825, #fdd835); }
+  .prep-fill-ready  { background: linear-gradient(90deg, #2e7d32, #43a047); }
+  .prep-stats { display: flex; gap: 20px; flex-wrap: wrap; margin-top: 14px; }
+  .prep-stat  { text-align: center; }
+  .prep-stat .pv { font-size: 1.4rem; font-weight: 800; color: var(--primary); }
+  .prep-stat .pl { font-size: 0.75rem; color: var(--muted); margin-top: 1px; }
+  .prep-trend { font-size: 0.82rem; margin-top: 10px; padding: 7px 12px; border-radius: 6px; }
+  .prep-trend.up   { background: #e8f5e9; color: #2e7d32; }
+  .prep-trend.down { background: #ffebee; color: #c62828; }
+  .prep-trend.flat { background: #f5f5f5; color: var(--muted); }
+  .prep-history { margin-top: 14px; display: flex; gap: 6px; flex-wrap: wrap; align-items: flex-end; }
+  .prep-bar-wrap { display: flex; flex-direction: column; align-items: center; gap: 3px; }
+  .prep-bar { width: 28px; border-radius: 4px 4px 0 0; min-height: 4px; }
+  .prep-bar-lbl { font-size: 0.65rem; color: var(--muted); }
+
   /* Streak flame emoji pulse */
   .flame-emoji { display: inline-block; animation: flamePulse 0.9s ease-in-out infinite alternate; }
   @keyframes flamePulse { from { transform: scale(1); } to { transform: scale(1.25); } }
@@ -497,6 +518,18 @@
 
     <!-- HOME SECTION -->
     <div id="section-home">
+
+      <!-- PREPAREDNESS METER -->
+      <div class="card fade-in" id="prep-card">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px">
+          <h2 style="margin:0">🎯 Exam Preparedness</h2>
+          <span id="prep-badge" style="font-size:0.78rem;font-weight:700;padding:3px 12px;border-radius:20px"></span>
+        </div>
+        <div id="prep-body">
+          <div style="color:var(--muted);font-size:0.88rem">Loading…</div>
+        </div>
+      </div>
+
       <div class="card fade-in">
         <h2>Choose Your Session</h2>
         <div class="mode-grid" id="mode-grid">
@@ -1141,12 +1174,128 @@ const App = (() => {
     });
     document.getElementById('section-' + sec).classList.remove('hidden');
     document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
-    if (sec === 'home') document.querySelector('[onclick*="\'home\'"]').classList.add('active');
+    if (sec === 'home') {
+      document.querySelector('[onclick*="\'home\'"]').classList.add('active');
+      renderPreparedness(); // fire-and-forget
+    }
     if (sec === 'leaderboard') {
       document.querySelector('[onclick*="\'leaderboard\'"]').classList.add('active');
       renderLeaderboard();
     }
     if (sec === 'quiz' || sec === 'home') stopTimer();
+  }
+
+  // ==============================================================
+  // EXAM PREPAREDNESS METER
+  // ==============================================================
+  async function renderPreparedness() {
+    const body  = document.getElementById('prep-body');
+    const badge = document.getElementById('prep-badge');
+    body.innerHTML = '<div style="color:var(--muted);font-size:0.88rem">Loading…</div>';
+
+    // Fetch only this user's exam sessions from leaderboard collection (fast, no answers)
+    let all = await loadLB();
+    const exams = all
+      .filter(e => e.username === username && e.mode === 'exam')
+      .sort((a, b) => a.ts - b.ts); // oldest → newest
+
+    if (exams.length === 0) {
+      badge.textContent = 'No Data';
+      badge.style.cssText = 'font-size:0.78rem;font-weight:700;padding:3px 12px;border-radius:20px;background:#f0f0f0;color:var(--muted)';
+      body.innerHTML =
+        '<div style="color:var(--muted);font-size:0.9rem;text-align:center;padding:12px 0">' +
+        '📋 No exam sessions yet. Take an <strong>Exam Mode</strong> session to see your preparedness.' +
+        '</div>';
+      return;
+    }
+
+    const total     = exams.length;
+    const avgPct    = Math.round(exams.reduce((s, e) => s + e.pct, 0) / total);
+    const passCount = exams.filter(e => e.pass).length;
+    const passRate  = Math.round((passCount / total) * 100);
+    const bestPct   = Math.max(...exams.map(e => e.pct));
+
+    // Trend: compare last 3 vs overall avg
+    const recent    = exams.slice(-3);
+    const recentAvg = Math.round(recent.reduce((s, e) => s + e.pct, 0) / recent.length);
+    const trendDiff = recentAvg - avgPct;
+    const trendDir  = trendDiff >= 3 ? 'up' : trendDiff <= -3 ? 'down' : 'flat';
+
+    // Meter score: weighted blend of avg, pass rate, and best (caps at 100)
+    const meterPct = Math.min(100, Math.round(avgPct * 0.5 + passRate * 0.35 + bestPct * 0.15));
+
+    // Determine band
+    let band, bandLabel, bandColor, badgeBg, advice;
+    if (meterPct < 40) {
+      band = 'low';   bandLabel = 'Not Ready';   bandColor = '#c62828';
+      badgeBg = '#ffebee';
+      advice = '📚 Keep studying! Focus on all chapters and try more exam sessions.';
+    } else if (meterPct < 60) {
+      band = 'fair';  bandLabel = 'Needs Work';  bandColor = '#e65100';
+      badgeBg = '#fff3e0';
+      advice = '📖 You\'re making progress. Review weak chapters and aim for consistent 65%+ scores.';
+    } else if (meterPct < 78) {
+      band = 'good';  bandLabel = 'Almost There'; bandColor = '#e65100';
+      badgeBg = '#fff8e1';
+      advice = '💪 Almost ready! A few more exam sessions should get you over the passing line.';
+    } else {
+      band = 'ready'; bandLabel = 'Exam Ready ✓'; bandColor = '#2e7d32';
+      badgeBg = '#e8f5e9';
+      advice = '🎉 You\'re consistently performing above the passing threshold. Go for it!';
+    }
+
+    // Badge
+    badge.textContent = bandLabel;
+    badge.style.cssText = 'font-size:0.78rem;font-weight:700;padding:3px 12px;border-radius:20px;background:' + badgeBg + ';color:' + bandColor;
+
+    // Trend text
+    const trendMsg = total < 2 ? '' :
+      trendDir === 'up'   ? '↑ Trending up — your last ' + recent.length + ' attempts avg ' + recentAvg + '% vs your overall ' + avgPct + '%' :
+      trendDir === 'down' ? '↓ Trending down — your last ' + recent.length + ' attempts avg ' + recentAvg + '% vs your overall ' + avgPct + '%' :
+                            '→ Steady — your recent scores are consistent with your overall average';
+
+    // Mini bar chart (last 8 exams)
+    const chartExams = exams.slice(-8);
+    const maxH = 48;
+    let barsHtml = '';
+    chartExams.forEach((e, i) => {
+      const h   = Math.max(4, Math.round((e.pct / 100) * maxH));
+      const col = e.pass ? '#2e7d32' : '#c62828';
+      barsHtml +=
+        '<div class="prep-bar-wrap">' +
+        '<div class="prep-bar" style="height:' + h + 'px;background:' + col + '" title="' + e.pct + '% · ' + e.date + '"></div>' +
+        '<div class="prep-bar-lbl">' + e.pct + '%</div>' +
+        '</div>';
+    });
+
+    // Assemble HTML
+    body.innerHTML =
+      // Meter bar
+      '<div class="prep-meter-wrap">' +
+        '<div class="prep-meter-track">' +
+          '<div class="prep-meter-fill prep-fill-' + band + '" style="width:' + meterPct + '%"></div>' +
+        '</div>' +
+        '<div style="display:flex;justify-content:space-between;font-size:0.72rem;color:var(--muted);margin-top:3px">' +
+          '<span>0%</span><span style="color:var(--danger);font-weight:700">65% pass line</span><span>100%</span>' +
+        '</div>' +
+      '</div>' +
+      // Pass-line marker overlay (visual tick at 65%)
+      // Stats row
+      '<div class="prep-stats">' +
+        '<div class="prep-stat"><div class="pv">' + total + '</div><div class="pl">Exams Taken</div></div>' +
+        '<div class="prep-stat"><div class="pv">' + avgPct + '%</div><div class="pl">Avg Score</div></div>' +
+        '<div class="prep-stat"><div class="pv">' + passRate + '%</div><div class="pl">Pass Rate</div></div>' +
+        '<div class="prep-stat"><div class="pv">' + bestPct + '%</div><div class="pl">Best Score</div></div>' +
+      '</div>' +
+      // Advice
+      '<div style="font-size:0.85rem;color:var(--text);margin-top:12px;padding:10px 14px;background:var(--bg);border-radius:8px">' + advice + '</div>' +
+      // Trend
+      (trendMsg ? '<div class="prep-trend ' + trendDir + '">' + trendMsg + '</div>' : '') +
+      // Bar chart
+      (chartExams.length > 1 ?
+        '<div style="font-size:0.75rem;color:var(--muted);margin-top:14px;margin-bottom:4px">Last ' + chartExams.length + ' exam scores</div>' +
+        '<div class="prep-history">' + barsHtml + '</div>'
+        : '');
   }
 
   // ==============================================================
