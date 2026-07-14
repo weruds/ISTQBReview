@@ -30,6 +30,63 @@
   body { font-family: -apple-system, 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
   .hidden { display: none !important; }
 
+  /* ===== RESPONSIVE BASE ===== */
+  html { font-size: 16px; }
+  /* Large monitor (1400px+) */
+  @media (min-width: 1400px) {
+    html { font-size: 17px; }
+    .container { max-width: 1100px; }
+  }
+  /* Standard desktop / laptop (1024–1399px) — default, no override needed */
+  /* Tablet landscape / small laptop (768–1023px) */
+  @media (max-width: 1023px) {
+    .container { max-width: 720px; padding: 20px 14px; }
+    header h1 { font-size: 1.1rem; }
+  }
+  /* Tablet portrait / large phone (540–767px) */
+  @media (max-width: 767px) {
+    html { font-size: 15px; }
+    .container { max-width: 100%; padding: 16px 12px; }
+    header { padding: 12px 16px; }
+    header h1 { font-size: 1rem; }
+    .card { padding: 20px 16px; }
+    .username-card { padding: 36px 24px; }
+    .results-stats { grid-template-columns: repeat(3,1fr); gap: 8px; }
+    .lb-controls { flex-direction: column; align-items: flex-start; }
+    .stats-bar { grid-template-columns: 1fr 1fr; }
+  }
+  /* Mobile (max 539px) */
+  @media (max-width: 539px) {
+    html { font-size: 14px; }
+    header { padding: 10px 14px; flex-wrap: wrap; gap: 8px; }
+    header h1 { font-size: 0.95rem; }
+    .card { padding: 16px 14px; border-radius: 10px; }
+    .username-card { padding: 28px 18px; border-radius: 12px; max-width: 100%; width: 95%; }
+    .username-card h1 { font-size: 1.5rem; }
+    .btn-lg { padding: 12px 20px; font-size: 0.95rem; }
+    .mode-grid { grid-template-columns: 1fr; }
+    .results-stats { grid-template-columns: 1fr 1fr 1fr; gap: 6px; }
+    .stat-box .val { font-size: 1.3rem; }
+    .quiz-info { flex-wrap: wrap; gap: 6px; }
+    .question-text { font-size: 1rem; }
+    .option-btn { padding: 12px 14px; font-size: 0.9rem; }
+    .lb-controls { flex-direction: column; align-items: flex-start; gap: 8px; }
+    .lb-period-tabs { gap: 4px; }
+    .lb-period-tab, .lb-tab { padding: 6px 10px; font-size: 0.78rem; }
+    .score-circle { width: 120px; height: 120px; }
+    .score-circle .score-pct { font-size: 2rem; }
+    .nav-menu { gap: 6px; }
+    .nav-item { padding: 7px 12px; font-size: 0.82rem; }
+    .diff-grid { gap: 6px; }
+    .diff-btn { padding: 8px 14px; font-size: 0.82rem; }
+    .user-badge-name { display: none; } /* show avatar only on very small screens */
+  }
+  /* Very small phones (max 380px) */
+  @media (max-width: 380px) {
+    html { font-size: 13px; }
+    .username-card { padding: 22px 14px; }
+  }
+
   /* ===== HEADER ===== */
   header { background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%); color: white; padding: 16px 24px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 2px 8px rgba(0,0,0,0.3); }
   header h1 { font-size: 1.3rem; font-weight: 700; letter-spacing: 0.5px; }
@@ -297,7 +354,7 @@
       <hr><span>or create a new profile</span><hr>
     </div>
 
-    <!-- New user / Entry ID fields -->
+    <!-- New user registration fields -->
     <div id="new-user-fields">
       <div class="input-group">
         <label for="username-input">Your Name</label>
@@ -307,15 +364,61 @@
         <label for="entryid-input">Entry ID <span style="font-weight:400;color:var(--muted)">(secret word — remember this!)</span></label>
         <input type="password" id="entryid-input" placeholder="Choose a secret word or phrase" maxlength="40" autocomplete="off">
       </div>
+      <div class="input-group">
+        <label for="secq-select">Security Question <span style="font-weight:400;color:var(--muted)">(used to recover your Entry ID)</span></label>
+        <select id="secq-select" style="width:100%;padding:12px 16px;border:2px solid var(--border);border-radius:8px;font-size:0.9rem;outline:none;transition:border-color 0.2s;background:white" onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'">
+          <option value="">— Choose a question —</option>
+          <option value="pet">What was the name of your first pet?</option>
+          <option value="school">What primary school did you attend?</option>
+          <option value="city">What city were you born in?</option>
+          <option value="mother">What is your mother's maiden name?</option>
+          <option value="friend">What is the name of your childhood best friend?</option>
+          <option value="food">What is your favourite food?</option>
+          <option value="hero">Who is your childhood hero?</option>
+        </select>
+      </div>
+      <div class="input-group">
+        <label for="secq-answer">Your Answer</label>
+        <input type="text" id="secq-answer" placeholder="Answer (not case-sensitive)" maxlength="60" autocomplete="off">
+      </div>
+      <div style="background:#e8f4fd;border-radius:8px;padding:10px 14px;font-size:0.78rem;color:#1565c0;margin-bottom:4px">
+        💡 <strong>Using another device?</strong> You can register the same name with the same Entry ID and security question — your existing scores will be recognised.
+      </div>
     </div>
 
-    <!-- Returning user Entry ID verification (hidden by default) -->
+    <!-- Returning user Entry ID verification -->
     <div id="verify-fields" class="hidden">
       <div class="input-group">
-        <label id="verify-label">Enter your Entry ID for <strong id="verify-username-display"></strong></label>
+        <label>Enter your Entry ID for <strong id="verify-username-display"></strong></label>
         <input type="password" id="verify-entryid-input" placeholder="Your secret word" maxlength="40" autocomplete="off">
       </div>
+      <div style="text-align:right;margin-top:-8px;margin-bottom:14px">
+        <button onclick="App.showForgotFlow()" style="background:none;border:none;color:var(--accent);font-size:0.82rem;cursor:pointer;padding:0;font-weight:600">Forgot Entry ID?</button>
+      </div>
       <button class="btn btn-outline btn-sm" style="margin-bottom:12px" onclick="App.cancelVerify()">← Back</button>
+    </div>
+
+    <!-- Forgot Entry ID flow -->
+    <div id="forgot-fields" class="hidden">
+      <div style="background:#fff8e1;border-radius:8px;padding:10px 14px;font-size:0.82rem;color:#5d4037;margin-bottom:14px">
+        🔐 Answer your security question to set a new Entry ID for <strong id="forgot-username-display"></strong>.
+      </div>
+      <div class="input-group" id="forgot-question-wrap">
+        <label id="forgot-question-label">Security Question</label>
+        <input type="text" id="forgot-answer-input" placeholder="Your answer" maxlength="60" autocomplete="off">
+      </div>
+      <div class="input-group">
+        <label for="forgot-new-entry">New Entry ID</label>
+        <input type="password" id="forgot-new-entry" placeholder="New secret word or phrase" maxlength="40" autocomplete="off">
+      </div>
+      <div class="input-group">
+        <label for="forgot-confirm-entry">Confirm New Entry ID</label>
+        <input type="password" id="forgot-confirm-entry" placeholder="Repeat new Entry ID" maxlength="40" autocomplete="off">
+      </div>
+      <div style="display:flex;gap:8px;margin-bottom:12px">
+        <button class="btn btn-primary" style="flex:1" onclick="App.submitForgot()">Reset Entry ID</button>
+        <button class="btn btn-outline btn-sm" onclick="App.cancelForgot()">← Back</button>
+      </div>
     </div>
 
     <button class="btn btn-primary btn-lg" style="width:100%;margin-top:4px" id="btn-start" onclick="App.handleLogin()">Start →</button>
@@ -573,7 +676,7 @@ const App = (() => {
     return users[name];
   }
 
-  // Simple hash for Entry ID (not cryptographic — client-side only)
+  // One-way hash for Entry ID and security answers
   function hashEntry(s) {
     let h = 0;
     for (let i = 0; i < s.length; i++) {
@@ -582,6 +685,9 @@ const App = (() => {
     }
     return 'eid_' + Math.abs(h).toString(36);
   }
+
+  // Normalise security answer: lowercase + trim
+  function normaliseAnswer(s) { return s.trim().toLowerCase(); }
 
   // ==============================================================
   // STREAK TRACKING
@@ -728,14 +834,72 @@ const App = (() => {
     pendingVerifyName = null;
     document.querySelectorAll('.user-chip').forEach(c => c.classList.remove('selected'));
     document.getElementById('verify-fields').classList.add('hidden');
+    document.getElementById('forgot-fields').classList.add('hidden');
+    document.getElementById('btn-start').classList.remove('hidden');
     document.getElementById('new-user-fields').classList.remove('hidden');
     document.getElementById('username-input').value = '';
     document.getElementById('entryid-input').value = '';
   }
 
+  // Security question labels
+  const SEC_QUESTIONS = {
+    pet:    'What was the name of your first pet?',
+    school: 'What primary school did you attend?',
+    city:   'What city were you born in?',
+    mother: "What is your mother's maiden name?",
+    friend: 'What is the name of your childhood best friend?',
+    food:   'What is your favourite food?',
+    hero:   'Who is your childhood hero?'
+  };
+
+  function showForgotFlow() {
+    const user = getUser(pendingVerifyName);
+    if (!user || !user.secqKey) {
+      showToast('No security question set for this account. Please contact an admin to reset your Entry ID.');
+      return;
+    }
+    document.getElementById('verify-fields').classList.add('hidden');
+    document.getElementById('btn-start').classList.add('hidden');
+    document.getElementById('forgot-fields').classList.remove('hidden');
+    document.getElementById('forgot-username-display').textContent = pendingVerifyName;
+    document.getElementById('forgot-question-label').textContent = SEC_QUESTIONS[user.secqKey] || 'Security Question';
+    document.getElementById('forgot-answer-input').value = '';
+    document.getElementById('forgot-new-entry').value = '';
+    document.getElementById('forgot-confirm-entry').value = '';
+  }
+
+  function cancelForgot() {
+    document.getElementById('forgot-fields').classList.add('hidden');
+    document.getElementById('btn-start').classList.remove('hidden');
+    document.getElementById('verify-fields').classList.remove('hidden');
+    document.getElementById('forgot-answer-input').value = '';
+    document.getElementById('forgot-new-entry').value = '';
+    document.getElementById('forgot-confirm-entry').value = '';
+  }
+
+  function submitForgot() {
+    const user    = getUser(pendingVerifyName);
+    const answer  = document.getElementById('forgot-answer-input').value.trim();
+    const newEntry = document.getElementById('forgot-new-entry').value.trim();
+    const confirm  = document.getElementById('forgot-confirm-entry').value.trim();
+
+    if (!answer)  { showToast('Please enter your answer'); return; }
+    if (hashEntry(normaliseAnswer(answer)) !== user.secqHash) {
+      document.getElementById('forgot-answer-input').classList.add('error');
+      showToast('Incorrect answer. Try again.'); return;
+    }
+    if (!newEntry) { showToast('Please enter a new Entry ID'); return; }
+    if (newEntry.length < 3) { showToast('Entry ID must be at least 3 characters'); return; }
+    if (newEntry !== confirm) { showToast('Entry IDs do not match'); return; }
+
+    upsertUser(pendingVerifyName, { entryIdHash: hashEntry(newEntry) });
+    showToast('✅ Entry ID reset! You can now log in with your new Entry ID.');
+    cancelVerify();
+  }
+
   function handleLogin() {
     if (pendingVerifyName) {
-      // Returning user verification
+      // Returning user: verify Entry ID
       const entryRaw = document.getElementById('verify-entryid-input').value.trim();
       if (!entryRaw) {
         document.getElementById('verify-entryid-input').classList.add('error');
@@ -748,24 +912,38 @@ const App = (() => {
       }
       loginAs(pendingVerifyName);
     } else {
-      // New user registration
-      const nameVal = document.getElementById('username-input').value.trim();
+      // New user registration (or cross-device re-registration)
+      const nameVal  = document.getElementById('username-input').value.trim();
       const entryRaw = document.getElementById('entryid-input').value.trim();
-      if (!nameVal) {
-        document.getElementById('username-input').classList.add('error');
-        showToast('Please enter your name'); return;
-      }
-      if (!entryRaw) {
-        document.getElementById('entryid-input').classList.add('error');
-        showToast('Please set an Entry ID (secret word)'); return;
-      }
-      // Check if name already taken
+      const secqKey  = document.getElementById('secq-select').value;
+      const secqAns  = document.getElementById('secq-answer').value.trim();
+      if (!nameVal) { document.getElementById('username-input').classList.add('error'); showToast('Please enter your name'); return; }
+      if (!entryRaw) { document.getElementById('entryid-input').classList.add('error'); showToast('Please set an Entry ID'); return; }
+      if (!secqKey)  { showToast('Please choose a security question'); return; }
+      if (!secqAns)  { document.getElementById('secq-answer').classList.add('error'); showToast('Please answer your security question'); return; }
+
       const existing = getUser(nameVal);
       if (existing) {
-        showToast('That name already exists. Select it above or choose a different name.');
+        // ---- Cross-device re-registration ----
+        // Allow if Entry ID matches — carries over avatar/streak from this device (nothing)
+        // but lets them use their existing leaderboard scores
+        if (hashEntry(entryRaw) !== existing.entryIdHash) {
+          showToast('That name already exists and the Entry ID does not match. Use the chip above to log in, or choose a different name.');
+          return;
+        }
+        // Entry ID matches — silently log in, optionally update security question
+        upsertUser(nameVal, { secqKey, secqHash: hashEntry(normaliseAnswer(secqAns)) });
+        showToast('Welcome back, ' + nameVal + '! Profile linked to this device.');
+        loginAs(nameVal);
         return;
       }
-      upsertUser(nameVal, { entryIdHash: hashEntry(entryRaw), streak: 0, lastActiveDate: null, avatar: null });
+      // Brand-new user
+      upsertUser(nameVal, {
+        entryIdHash: hashEntry(entryRaw),
+        secqKey,
+        secqHash: hashEntry(normaliseAnswer(secqAns)),
+        streak: 0, lastActiveDate: null, avatar: null
+      });
       loginAs(nameVal);
     }
   }
@@ -1262,9 +1440,13 @@ const App = (() => {
   document.getElementById('verify-entryid-input').addEventListener('keypress', e => { if (e.key === 'Enter') handleLogin(); });
 
   // Clear error styling on type
-  ['username-input','entryid-input','verify-entryid-input'].forEach(id => {
+  ['username-input','entryid-input','verify-entryid-input','secq-answer','forgot-answer-input','forgot-new-entry','forgot-confirm-entry'].forEach(id => {
     document.getElementById(id).addEventListener('input', function() { this.classList.remove('error'); });
   });
+
+  // Enter key on forgot fields
+  document.getElementById('forgot-answer-input').addEventListener('keypress', e => { if (e.key === 'Enter') submitForgot(); });
+  document.getElementById('forgot-confirm-entry').addEventListener('keypress', e => { if (e.key === 'Enter') submitForgot(); });
 
   // Close profile modal on overlay click
   document.getElementById('profile-modal').addEventListener('click', function(e) {
@@ -1274,6 +1456,7 @@ const App = (() => {
   // Public API
   return {
     handleLogin, cancelVerify, signOut,
+    showForgotFlow, cancelForgot, submitForgot,
     showSection, selectMode, setDiff, startSession,
     selectAnswer, nextQuestion, finishSession, confirmQuit,
     setLbMode, setLbPeriod, setLbDiff,
