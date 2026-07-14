@@ -378,6 +378,29 @@
   /* Study Mode note */
   .study-note { background: #fff8e1; border: 1px solid #ffd54f; border-radius: 8px; padding: 10px 14px; font-size: 0.82rem; color: #5d4037; margin-top: 12px; }
 
+  /* ===== RECORD BANNER ===== */
+  #record-banner { position: fixed; top: 0; left: 0; right: 0; z-index: 8000; transform: translateY(-100%); transition: transform 0.4s cubic-bezier(0.34,1.56,0.64,1); }
+  #record-banner.show { transform: translateY(0); }
+  .record-banner-inner { background: linear-gradient(135deg, #1a237e 0%, #1565c0 100%); color: white; padding: 13px 20px; display: flex; align-items: center; gap: 14px; box-shadow: 0 4px 16px rgba(0,0,0,0.3); }
+  .record-banner-icon { font-size: 1.6rem; flex-shrink: 0; }
+  .record-banner-text { flex: 1; font-size: 0.9rem; line-height: 1.4; }
+  .record-banner-text strong { display: block; font-size: 1rem; }
+  .record-banner-close { background: rgba(255,255,255,0.2); border: none; color: white; width: 28px; height: 28px; border-radius: 50%; cursor: pointer; font-size: 1.1rem; line-height: 1; flex-shrink: 0; }
+  .record-banner-close:hover { background: rgba(255,255,255,0.35); }
+
+  /* ===== RECORDS CARD ===== */
+  .rec-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  @media (max-width: 480px) { .rec-grid { grid-template-columns: 1fr; } }
+  .rec-box { border: 2px solid var(--border); border-radius: 10px; padding: 14px 16px; position: relative; overflow: hidden; }
+  .rec-box.gold { border-color: #f9a825; background: #fffde7; }
+  .rec-box.blue { border-color: #1565c0; background: #e3f2fd; }
+  .rec-box .rec-crown { font-size: 1.5rem; margin-bottom: 6px; display: block; }
+  .rec-box .rec-title { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted); margin-bottom: 8px; }
+  .rec-box .rec-val { font-size: 1.5rem; font-weight: 800; color: var(--primary); }
+  .rec-box .rec-holder { font-size: 0.8rem; color: var(--muted); margin-top: 2px; }
+  .rec-box .rec-sub { font-size: 0.75rem; color: var(--muted); margin-top: 4px; }
+  .rec-box .rec-you { font-size: 0.7rem; font-weight: 700; color: var(--accent); margin-top: 4px; }
+
   /* ===== FOLLOW BUTTON ===== */
   .follow-btn { padding: 3px 10px; border-radius: 12px; font-size: 0.72rem; font-weight: 700; cursor: pointer; border: 1.5px solid; transition: all 0.15s; white-space: nowrap; }
   .follow-btn.not-following { border-color: var(--accent); color: var(--accent); background: transparent; }
@@ -525,6 +548,17 @@
 
     <!-- HOME SECTION -->
     <div id="section-home">
+
+      <!-- PRACTICE RECORDS CARD -->
+      <div class="card fade-in" id="records-card">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px">
+          <h2 style="margin:0">⚡ Practice Records</h2>
+          <span style="font-size:0.75rem;color:var(--muted)">All-time · Practice mode only</span>
+        </div>
+        <div id="records-body">
+          <div style="color:var(--muted);font-size:0.88rem">Loading…</div>
+        </div>
+      </div>
 
       <!-- PREPAREDNESS METER -->
       <div class="card fade-in" id="prep-card">
@@ -719,6 +753,18 @@
   </div>
 </div>
 
+<!-- ===== RECORD BROKEN BANNER ===== -->
+<div id="record-banner">
+  <div class="record-banner-inner">
+    <div class="record-banner-icon" id="record-banner-icon">🏆</div>
+    <div class="record-banner-text">
+      <strong id="record-banner-title">Record Broken!</strong>
+      <span id="record-banner-body"></span>
+    </div>
+    <button class="record-banner-close" onclick="App.closeBanner()">✕</button>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -798,6 +844,29 @@ const App = (() => {
     try {
       await _db.collection('sessions').doc(record.sessionId).set(record);
     } catch(e) { console.error('saveSession', e); }
+  }
+
+  // Records collection — one doc per record type, e.g. "fastest_practice", "highest_practice"
+  async function loadRecord(id) {
+    try {
+      const doc = await _db.collection('records').doc(id).get();
+      return doc.exists ? doc.data() : null;
+    } catch(e) { console.error('loadRecord', e); return null; }
+  }
+
+  async function saveRecord(id, data) {
+    try {
+      await _db.collection('records').doc(id).set(data);
+    } catch(e) { console.error('saveRecord', e); }
+  }
+
+  async function loadAllRecords() {
+    try {
+      const snap = await _db.collection('records').get();
+      const result = {};
+      snap.forEach(doc => { result[doc.id] = doc.data(); });
+      return result;
+    } catch(e) { console.error('loadAllRecords', e); return {}; }
   }
 
   // ==============================================================
@@ -1117,6 +1186,8 @@ const App = (() => {
       if (s >= 3) showToast('🔥 ' + s + '-day streak! Keep it up, ' + name + '!');
       else if (s === 1) showToast('Welcome, ' + name + '! Day 1 streak started.');
     }
+    // Check if any followed user broke a record since last login (delayed so UI settles first)
+    setTimeout(() => checkFollowingRecordBanners(), 2000);
   }
 
   function signOut() {
@@ -1212,6 +1283,7 @@ const App = (() => {
     document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
     if (sec === 'home') {
       document.querySelector('[onclick*="\'home\'"]').classList.add('active');
+      renderRecords();      // fire-and-forget
       renderPreparedness(); // fire-and-forget
     }
     if (sec === 'leaderboard') {
@@ -1219,6 +1291,153 @@ const App = (() => {
       renderLeaderboard();
     }
     if (sec === 'quiz' || sec === 'home') stopTimer();
+  }
+
+  // ==============================================================
+  // PRACTICE RECORDS
+  // ==============================================================
+  async function checkAndUpdateRecords(entry) {
+    if (entry.mode !== 'practice') return;
+
+    const [fastest, highest] = await Promise.all([
+      loadRecord('fastest_practice'),
+      loadRecord('highest_practice')
+    ]);
+
+    const notifications = [];
+
+    // ── Highest score ─────────────────────────────────────────────
+    if (!highest || entry.pct > highest.pct || (entry.pct === highest.pct && entry.score > highest.score)) {
+      const prev = highest ? { ...highest } : null;
+      await saveRecord('highest_practice', {
+        username: entry.username, pct: entry.pct, score: entry.score,
+        total: entry.total, timeTaken: entry.timeTaken, date: entry.date, ts: entry.ts,
+        difficulty: entry.difficulty
+      });
+      if (entry.username === username) {
+        notifications.push({
+          icon: '🏆', title: 'You set a new High Score Record!',
+          body: 'All-time Practice best: ' + entry.pct + '% (' + entry.score + '/' + entry.total + ')' +
+                (prev ? ' — beating ' + prev.username + '\'s ' + prev.pct + '%!' : '!')
+        });
+      }
+    }
+
+    // ── Fastest passing session ────────────────────────────────────
+    if (entry.pass && entry.timeTaken != null) {
+      if (!fastest || entry.timeTaken < fastest.timeTaken) {
+        const prev = fastest ? { ...fastest } : null;
+        await saveRecord('fastest_practice', {
+          username: entry.username, pct: entry.pct, score: entry.score,
+          total: entry.total, timeTaken: entry.timeTaken, date: entry.date, ts: entry.ts,
+          difficulty: entry.difficulty
+        });
+        if (entry.username === username) {
+          const mm = Math.floor(entry.timeTaken / 60), ss = entry.timeTaken % 60;
+          notifications.push({
+            icon: '⚡', title: 'You set a new Speed Record!',
+            body: 'Fastest passing Practice: ' + mm + 'm ' + String(ss).padStart(2,'0') + 's at ' + entry.pct + '%' +
+                  (prev ? ' — beating ' + prev.username + '\'s ' + Math.floor(prev.timeTaken/60) + 'm ' + String(prev.timeTaken%60).padStart(2,'0') + 's!' : '!')
+          });
+        }
+      }
+    }
+
+    notifications.forEach((n, i) => setTimeout(() => showRecordBanner(n.icon, n.title, n.body), i * 4500));
+  }
+
+  async function checkFollowingRecordBanners() {
+    const following = await loadFollowing();
+    if (!following.length) return;
+
+    const me = await getUser(username);
+    const lastChecked = (me && me.lastRecordCheck) ? me.lastRecordCheck : 0;
+
+    const [fastest, highest] = await Promise.all([
+      loadRecord('fastest_practice'),
+      loadRecord('highest_practice')
+    ]);
+
+    const banners = [];
+    if (highest && following.includes(highest.username) && highest.ts > lastChecked) {
+      banners.push({
+        icon: '🏆',
+        title: highest.username + ' broke the High Score Record!',
+        body: highest.username + ' is now the Practice top scorer: ' + highest.pct + '% (' + highest.score + '/' + highest.total + ') on ' + highest.date
+      });
+    }
+    if (fastest && following.includes(fastest.username) && fastest.ts > lastChecked) {
+      const mm = Math.floor(fastest.timeTaken / 60), ss = fastest.timeTaken % 60;
+      banners.push({
+        icon: '⚡',
+        title: fastest.username + ' broke the Speed Record!',
+        body: fastest.username + ' finished in ' + mm + 'm ' + String(ss).padStart(2,'0') + 's at ' + fastest.pct + '% on ' + fastest.date
+      });
+    }
+
+    banners.forEach((n, i) => setTimeout(() => showRecordBanner(n.icon, n.title, n.body), i * 4500));
+    await upsertUser(username, { lastRecordCheck: Date.now() });
+  }
+
+  async function renderRecords() {
+    const body = document.getElementById('records-body');
+    body.innerHTML = '<div style="color:var(--muted);font-size:0.88rem">Loading…</div>';
+
+    const [fastest, highest] = await Promise.all([
+      loadRecord('fastest_practice'),
+      loadRecord('highest_practice')
+    ]);
+
+    function fmtTime(sec) {
+      const m = Math.floor(sec / 60), s = sec % 60;
+      return m + 'm ' + String(s).padStart(2, '0') + 's';
+    }
+
+    function recBox(cls, crown, title, val, holder, sub, isYou) {
+      return '<div class="rec-box ' + cls + '">' +
+        '<span class="rec-crown">' + crown + '</span>' +
+        '<div class="rec-title">' + title + '</div>' +
+        '<div class="rec-val">' + val + '</div>' +
+        '<div class="rec-holder">👤 ' + escapeHtml(holder) + '</div>' +
+        '<div class="rec-sub">' + sub + '</div>' +
+        (isYou ? '<div class="rec-you">◀ That\'s you!</div>' : '') +
+        '</div>';
+    }
+
+    const highHtml = highest
+      ? recBox('gold', '🏆', 'Highest Score', highest.pct + '%',
+          highest.username, highest.score + '/' + highest.total + ' · ' + highest.date,
+          highest.username === username)
+      : '<div class="rec-box" style="opacity:0.5"><span class="rec-crown">🏆</span>' +
+        '<div class="rec-title">Highest Score</div><div class="rec-val">—</div>' +
+        '<div class="rec-sub">No records yet</div></div>';
+
+    const fastHtml = fastest
+      ? recBox('blue', '⚡', 'Fastest (≥70% pass)', fmtTime(fastest.timeTaken),
+          fastest.username, fastest.pct + '% · ' + fastest.date,
+          fastest.username === username)
+      : '<div class="rec-box" style="opacity:0.5"><span class="rec-crown">⚡</span>' +
+        '<div class="rec-title">Fastest (≥70% pass)</div><div class="rec-val">—</div>' +
+        '<div class="rec-sub">No records yet</div></div>';
+
+    body.innerHTML = '<div class="rec-grid">' + highHtml + fastHtml + '</div>';
+  }
+
+  // ── Banner ─────────────────────────────────────────────────────
+  let _bannerTimer = null;
+  function showRecordBanner(icon, title, bodyText) {
+    document.getElementById('record-banner-icon').textContent  = icon;
+    document.getElementById('record-banner-title').textContent = title;
+    document.getElementById('record-banner-body').textContent  = bodyText;
+    const el = document.getElementById('record-banner');
+    el.classList.add('show');
+    clearTimeout(_bannerTimer);
+    _bannerTimer = setTimeout(() => el.classList.remove('show'), 8000);
+  }
+
+  function closeBanner() {
+    document.getElementById('record-banner').classList.remove('show');
+    clearTimeout(_bannerTimer);
   }
 
   // ==============================================================
@@ -1452,7 +1671,7 @@ const App = (() => {
 
   function finishSession() {
     stopTimer();
-    timeTaken = Math.floor((Date.now() - sessionStartTime) / 1000);
+    timeTaken = Math.floor((Date.now() - sessionStartTime) / 1000); // works for both modes
     showResults();
   }
 
@@ -1545,9 +1764,10 @@ const App = (() => {
       date: now.toLocaleDateString(),
       time: now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       ts: now.getTime(), // millisecond timestamp for period filtering
-      timeTaken: mode === 'exam' ? timeTaken : null
+      timeTaken: timeTaken || null   // record for both practice and exam
     };
-    saveScore(entry); // fire-and-forget — don't block showing results
+    saveScore(entry);                  // fire-and-forget — don't block showing results
+    checkAndUpdateRecords(entry);      // fire-and-forget — check/update practice records
     showSection('results');
   }
 
@@ -1782,6 +2002,7 @@ const App = (() => {
     selectAnswer, nextQuestion, finishSession, confirmQuit,
     setLbMode, setLbPeriod, setLbDiff,
     followUser, unfollowUser,
+    closeBanner,
     openProfile, closeProfile, saveProfile
   };
 })();
