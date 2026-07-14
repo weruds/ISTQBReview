@@ -432,6 +432,7 @@ const Admin = (() => {
     const err = document.getElementById('adm-err');
     if (u === ADMIN_USER && verifyAdminPass(p)) {
       err.classList.add('hidden');
+      sessionStorage.setItem('istqb_admin_session', '1'); // persist across refresh
       document.getElementById('screen-login').classList.add('hidden');
       document.getElementById('screen-admin').classList.remove('hidden');
       initAdmin();
@@ -442,6 +443,7 @@ const Admin = (() => {
   }
 
   function logout() {
+    sessionStorage.removeItem('istqb_admin_session');
     document.getElementById('screen-admin').classList.add('hidden');
     document.getElementById('screen-login').classList.remove('hidden');
     document.getElementById('adm-user').value = '';
@@ -807,6 +809,13 @@ const Admin = (() => {
   function escAttr(s) { return String(s).replace(/'/g,"\\'"); }
   function cap(s)     { return s ? s.charAt(0).toUpperCase() + s.slice(1) : ''; }
   function fmtDur(sec){ if (!sec) return '—'; const m = Math.floor(sec/60), s = sec%60; return m + 'm ' + s + 's'; }
+
+  // ---- Restore session on page refresh ----
+  if (sessionStorage.getItem('istqb_admin_session') === '1') {
+    document.getElementById('screen-login').classList.add('hidden');
+    document.getElementById('screen-admin').classList.remove('hidden');
+    initAdmin();
+  }
 
   // ---- ENTER KEY on login ----
   document.getElementById('adm-pass').addEventListener('keypress', e => { if (e.key === 'Enter') login(); });
