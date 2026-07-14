@@ -328,9 +328,12 @@
 <div id="screen-main" class="hidden">
   <header>
     <h1>📋 ISTQB Foundation Level Reviewer</h1>
-    <div class="user-badge" onclick="App.openProfile()" title="Edit profile">
-      <div class="header-avatar" id="header-avatar-wrap">👤</div>
-      <span class="user-badge-name" id="header-username">User</span>
+    <div style="display:flex;align-items:center;gap:10px">
+      <div class="user-badge" onclick="App.openProfile()" title="Edit profile">
+        <div class="header-avatar" id="header-avatar-wrap">👤</div>
+        <span class="user-badge-name" id="header-username">User</span>
+      </div>
+      <button onclick="App.signOut()" title="Sign out" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.3);color:white;padding:6px 13px;border-radius:20px;cursor:pointer;font-size:0.8rem;font-weight:600;transition:background 0.2s" onmouseover="this.style.background='rgba(255,255,255,0.22)'" onmouseout="this.style.background='rgba(255,255,255,0.1)'">Sign Out</button>
     </div>
   </header>
 
@@ -781,6 +784,21 @@ const App = (() => {
       const s = getStreak(name);
       if (s >= 3) showToast('🔥 ' + s + '-day streak! Keep it up, ' + name + '!');
       else if (s === 1) showToast('Welcome, ' + name + '! Day 1 streak started.');
+    }
+  }
+
+  function signOut() {
+    if (confirm('Sign out of your session?')) {
+      sessionStorage.removeItem('istqb_session_user');
+      username = '';
+      document.getElementById('screen-main').classList.add('hidden');
+      document.getElementById('screen-username').classList.remove('hidden');
+      // Reset login form to clean state
+      cancelVerify();
+      document.getElementById('username-input').value = '';
+      document.getElementById('entryid-input').value = '';
+      initLoginScreen();
+      stopTimer();
     }
   }
 
@@ -1255,7 +1273,7 @@ const App = (() => {
 
   // Public API
   return {
-    handleLogin, cancelVerify,
+    handleLogin, cancelVerify, signOut,
     showSection, selectMode, setDiff, startSession,
     selectAnswer, nextQuestion, finishSession, confirmQuit,
     setLbMode, setLbPeriod, setLbDiff,
