@@ -177,6 +177,7 @@
       <div class="tab" id="tab-users" onclick="Admin.showTab('users')">👥 Users</div>
       <div class="tab" id="tab-leaderboard" onclick="Admin.showTab('leaderboard')">🏆 Leaderboard</div>
       <div class="tab" id="tab-danger" onclick="Admin.showTab('danger')">🗑 Data Tools</div>
+      <div class="tab" id="tab-settings" onclick="Admin.showTab('settings')">⚙ Settings</div>
     </div>
 
     <!-- ===== SESSIONS TAB ===== -->
@@ -329,6 +330,33 @@
       </div>
     </div>
 
+    <!-- ===== SETTINGS TAB ===== -->
+    <div id="tab-panel-settings" class="hidden">
+      <div class="card">
+        <h2 style="margin-bottom:20px">⚙ Admin Settings</h2>
+        <div style="max-width:420px">
+          <div style="border:2px solid var(--border);border-radius:10px;padding:22px">
+            <div style="font-weight:700;font-size:1rem;margin-bottom:4px">Change Admin Password</div>
+            <div style="font-size:0.84rem;color:var(--muted);margin-bottom:18px">You must enter the current password to set a new one.</div>
+            <div class="field">
+              <label>Current Password</label>
+              <input type="password" id="chpw-current" placeholder="Current password" autocomplete="off">
+            </div>
+            <div class="field">
+              <label>New Password</label>
+              <input type="password" id="chpw-new" placeholder="New password (min 6 chars)" autocomplete="off">
+            </div>
+            <div class="field" style="margin-bottom:4px">
+              <label>Confirm New Password</label>
+              <input type="password" id="chpw-confirm" placeholder="Repeat new password" autocomplete="off">
+            </div>
+            <div id="chpw-err" style="color:var(--danger);font-size:0.82rem;margin-bottom:12px;min-height:18px"></div>
+            <button class="btn btn-primary" onclick="Admin.changePassword()">Update Password</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
   </div><!-- /container -->
 </div>
 
@@ -352,8 +380,14 @@ const Admin = (() => {
   const LS_LB       = 'istqb_leaderboard_v3';
   const LS_USERS    = 'istqb_users_v1';
   const LS_SESSIONS = 'istqb_sessions_v1';
-  const ADMIN_USER  = 'admin';
-  const ADMIN_PASS  = 'admin1104';
+  const ADMIN_USER    = 'admin';
+  const ADMIN_PASS_DEFAULT = 'admin1104';
+  const LS_ADMIN_PASS = 'istqb_admin_pass_v1';
+
+  // Read current password (from storage, or default)
+  function getAdminPass() {
+    return localStorage.getItem(LS_ADMIN_PASS) || ADMIN_PASS_DEFAULT;
+  }
 
   // ---- Pagination state ----
   let sessPage = 1;
@@ -379,7 +413,7 @@ const Admin = (() => {
     const u = document.getElementById('adm-user').value.trim();
     const p = document.getElementById('adm-pass').value;
     const err = document.getElementById('adm-err');
-    if (u === ADMIN_USER && p === ADMIN_PASS) {
+    if (u === ADMIN_USER && p === getAdminPass()) {
       err.classList.add('hidden');
       document.getElementById('screen-login').classList.add('hidden');
       document.getElementById('screen-admin').classList.remove('hidden');
@@ -437,14 +471,35 @@ const Admin = (() => {
   // ---- Tab switching ----
   function showTab(tab) {
     currentTab = tab;
-    ['sessions','users','leaderboard','danger'].forEach(t => {
+    ['sessions','users','leaderboard','danger','settings'].forEach(t => {
       document.getElementById('tab-panel-' + t).classList.toggle('hidden', t !== tab);
       document.getElementById('tab-' + t).classList.toggle('active', t === tab);
     });
     if (tab === 'sessions')    { applyFilters(); }
     if (tab === 'users')       { renderUsersTable(); }
     if (tab === 'leaderboard') { renderLbTable(); }
-    if (tab === 'danger')      { /* static */ }
+    if (tab === 'settings')    { clearPwFields(); }
+  }
+
+  function clearPwFields() {
+    ['chpw-current','chpw-new','chpw-confirm'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('chpw-err').textContent = '';
+  }
+
+  function changePassword() {
+    const current = document.getElementById('chpw-current').value;
+    const newPw   = document.getElementById('chpw-new').value;
+    const confirm = document.getElementById('chpw-confirm').value;
+    const errEl   = document.getElementById('chpw-err');
+    errEl.textContent = '';
+
+    if (current !== getAdminPass()) { errEl.textContent = 'Current password is incorrect.'; return; }
+    if (newPw.length < 6)           { errEl.textContent = 'New password must be at least 6 characters.'; return; }
+    if (newPw !== confirm)          { errEl.textContent = 'Passwords do not match.'; return; }
+
+    localStorage.setItem(LS_ADMIN_PASS, newPw);
+    clearPwFields();
+    showToast('✅ Password updated successfully!');
   }
 
   // ---- SESSIONS TABLE ----
@@ -758,7 +813,7 @@ const Admin = (() => {
     deleteSession,
     renderUsersTable, clearOneUserScores, deleteOneUser,
     clearUserData, clearByMode, clearAllLeaderboard, clearAllSessions, deleteUser,
-    exportCSV, hideConfirm
+    exportCSV, hideConfirm, changePassword
   };
 })();
 </script>
