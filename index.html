@@ -5,6 +5,53 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ISTQB Foundation Level Reviewer v2</title>
 <meta name="version" content="2.1">
+<script>
+  // ── Anti-cheat / content protection ──────────────────────────────
+  // Block right-click context menu
+  document.addEventListener('contextmenu', e => e.preventDefault());
+  // Block screenshot / snipping keyboard shortcuts and DevTools
+  document.addEventListener('keydown', e => {
+    const k = e.key;
+    // PrintScreen
+    if (k === 'PrintScreen') { e.preventDefault(); return; }
+    // Tab navigation (block switching away without navigating)
+    if (k === 'Tab') { e.preventDefault(); return; }
+    // F12 — DevTools
+    if (k === 'F12') { e.preventDefault(); return; }
+    // Ctrl/Cmd combos
+    if (e.ctrlKey || e.metaKey) {
+      // Ctrl+Shift+I/J/C — DevTools panels
+      if (e.shiftKey && ['i','I','j','J','c','C'].includes(k)) { e.preventDefault(); return; }
+      // Ctrl+U — View Source
+      if (['u','U'].includes(k)) { e.preventDefault(); return; }
+      // Ctrl+S — Save page
+      if (['s','S'].includes(k)) { e.preventDefault(); return; }
+      // Ctrl+P — Print (can screenshot via print-to-PDF)
+      if (['p','P'].includes(k)) { e.preventDefault(); return; }
+    }
+  });
+  // Block drag-select + copy
+  document.addEventListener('copy', e => e.preventDefault());
+  // Disable text selection via CSS (set on <html> once DOM available)
+  document.addEventListener('DOMContentLoaded', () => {
+    document.documentElement.style.userSelect = 'none';
+    document.documentElement.style.webkitUserSelect = 'none';
+  });
+</script>
+<!-- Firebase SDK (compat) -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script>
+  const _fbApp = firebase.initializeApp({
+    apiKey: "AIzaSyBim4icQZo1t0t21nBLSk_P4m7sdBP9W-c",
+    authDomain: "myistqbreviewer.firebaseapp.com",
+    projectId: "myistqbreviewer",
+    storageBucket: "myistqbreviewer.firebasestorage.app",
+    messagingSenderId: "463803904658",
+    appId: "1:463803904658:web:c21d4f41c9455887412c4b"
+  });
+  const _db = firebase.firestore();
+</script>
 <script src="questions.js"></script>
 <style>
   :root {
@@ -362,28 +409,30 @@
         <input type="text" id="username-input" placeholder="e.g. John Smith" maxlength="30" autocomplete="off">
       </div>
       <div class="input-group">
-        <label for="entryid-input">Entry ID <span style="font-weight:400;color:var(--muted)">(secret word — remember this!)</span></label>
-        <input type="password" id="entryid-input" placeholder="Choose a secret word or phrase" maxlength="40" autocomplete="off">
+        <label for="entryid-input">Entry ID <span style="font-weight:400;color:var(--muted)">(PIN number — remember this!)</span></label>
+        <input type="password" id="entryid-input" placeholder="4–6 digit PIN" maxlength="6" inputmode="numeric" pattern="[0-9]*" autocomplete="off">
       </div>
-      <div class="input-group">
-        <label for="secq-select">Security Question <span style="font-weight:400;color:var(--muted)">(used to recover your Entry ID)</span></label>
-        <select id="secq-select" style="width:100%;padding:12px 16px;border:2px solid var(--border);border-radius:8px;font-size:0.9rem;outline:none;transition:border-color 0.2s;background:white" onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'">
-          <option value="">— Choose a question —</option>
-          <option value="pet">What was the name of your first pet?</option>
-          <option value="school">What primary school did you attend?</option>
-          <option value="city">What city were you born in?</option>
-          <option value="mother">What is your mother's maiden name?</option>
-          <option value="friend">What is the name of your childhood best friend?</option>
-          <option value="food">What is your favourite food?</option>
-          <option value="hero">Who is your childhood hero?</option>
-        </select>
+      <div id="secq-fields" class="hidden">
+        <div class="input-group">
+          <label for="secq-select">Security Question <span style="font-weight:400;color:var(--muted)">(used to recover your Entry ID)</span></label>
+          <select id="secq-select" style="width:100%;padding:12px 16px;border:2px solid var(--border);border-radius:8px;font-size:0.9rem;outline:none;transition:border-color 0.2s;background:white" onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'">
+            <option value="">— Choose a question —</option>
+            <option value="pet">What was the name of your first pet?</option>
+            <option value="school">What primary school did you attend?</option>
+            <option value="city">What city were you born in?</option>
+            <option value="mother">What is your mother's maiden name?</option>
+            <option value="friend">What is the name of your childhood best friend?</option>
+            <option value="food">What is your favourite food?</option>
+            <option value="hero">Who is your childhood hero?</option>
+          </select>
+        </div>
+        <div class="input-group">
+          <label for="secq-answer">Your Answer</label>
+          <input type="text" id="secq-answer" placeholder="Answer (not case-sensitive)" maxlength="60" autocomplete="off">
+        </div>
       </div>
-      <div class="input-group">
-        <label for="secq-answer">Your Answer</label>
-        <input type="text" id="secq-answer" placeholder="Answer (not case-sensitive)" maxlength="60" autocomplete="off">
-      </div>
-      <div style="background:#e8f4fd;border-radius:8px;padding:10px 14px;font-size:0.78rem;color:#1565c0;margin-bottom:4px">
-        💡 <strong>Using another device?</strong> You can register the same name with the same Entry ID and security question — your existing scores will be recognised.
+      <div id="new-user-hint" class="hidden" style="background:#e8f4fd;border-radius:8px;padding:10px 14px;font-size:0.78rem;color:#1565c0;margin-bottom:4px">
+        💡 <strong>Using another device?</strong> Enter your name and Entry ID — your existing scores will be recognised automatically.
       </div>
     </div>
 
@@ -391,7 +440,7 @@
     <div id="verify-fields" class="hidden">
       <div class="input-group">
         <label>Enter your Entry ID for <strong id="verify-username-display"></strong></label>
-        <input type="password" id="verify-entryid-input" placeholder="Your secret word" maxlength="40" autocomplete="off">
+        <input type="password" id="verify-entryid-input" placeholder="Your 4–6 digit PIN" maxlength="6" inputmode="numeric" pattern="[0-9]*" autocomplete="off">
       </div>
       <div style="text-align:right;margin-top:-8px;margin-bottom:14px">
         <button onclick="App.showForgotFlow()" style="background:none;border:none;color:var(--accent);font-size:0.82rem;cursor:pointer;padding:0;font-weight:600">Forgot Entry ID?</button>
@@ -410,11 +459,11 @@
       </div>
       <div class="input-group">
         <label for="forgot-new-entry">New Entry ID</label>
-        <input type="password" id="forgot-new-entry" placeholder="New secret word or phrase" maxlength="40" autocomplete="off">
+        <input type="password" id="forgot-new-entry" placeholder="New 4–6 digit PIN" maxlength="6" inputmode="numeric" pattern="[0-9]*" autocomplete="off">
       </div>
       <div class="input-group">
         <label for="forgot-confirm-entry">Confirm New Entry ID</label>
-        <input type="password" id="forgot-confirm-entry" placeholder="Repeat new Entry ID" maxlength="40" autocomplete="off">
+        <input type="password" id="forgot-confirm-entry" placeholder="Repeat 4–6 digit PIN" maxlength="6" inputmode="numeric" pattern="[0-9]*" autocomplete="off">
       </div>
       <div style="display:flex;gap:8px;margin-bottom:12px">
         <button class="btn btn-primary" style="flex:1" onclick="App.submitForgot()">Reset Entry ID</button>
@@ -651,30 +700,68 @@ const App = (() => {
   let lbPeriod = 'all';
   let lbDiff = 'all';
 
-  // ---- Storage Keys ----
-  const LS_LB       = 'istqb_leaderboard_v3';
-  const LS_USERS    = 'istqb_users_v1';
-  const LS_SESSIONS = 'istqb_sessions_v1'; // full session log
+  // ==============================================================
+  // FIRESTORE HELPERS
+  // ==============================================================
+  // Collections: "users" (doc per username), "leaderboard" (doc per entry), "sessions" (doc per session)
+
+  async function loadUsers() {
+    try {
+      const snap = await _db.collection('users').get();
+      const result = {};
+      snap.forEach(doc => { result[doc.id] = doc.data(); });
+      return result;
+    } catch(e) { console.error('loadUsers', e); return {}; }
+  }
+
+  async function getUser(name) {
+    try {
+      const doc = await _db.collection('users').doc(name).get();
+      return doc.exists ? doc.data() : null;
+    } catch(e) { console.error('getUser', e); return null; }
+  }
+
+  async function upsertUser(name, patch) {
+    try {
+      await _db.collection('users').doc(name).set(patch, { merge: true });
+      return Object.assign({}, await getUser(name));
+    } catch(e) { console.error('upsertUser', e); return patch; }
+  }
+
+  async function loadLB() {
+    try {
+      const snap = await _db.collection('leaderboard').get();
+      const docs = snap.docs.map(d => d.data());
+      docs.sort((a, b) => (b.ts || 0) - (a.ts || 0));
+      return docs.slice(0, 2000);
+    } catch(e) { console.error('loadLB', e); return []; }
+  }
+
+  async function saveLBEntry(entry) {
+    try {
+      const id = 'lb_' + entry.ts + '_' + Math.random().toString(36).slice(2, 7);
+      await _db.collection('leaderboard').doc(id).set(entry);
+    } catch(e) { console.error('saveLBEntry', e); }
+  }
+
+  async function loadSessions() {
+    try {
+      const snap = await _db.collection('sessions').get();
+      const docs = snap.docs.map(d => d.data());
+      docs.sort((a, b) => (b.ts || 0) - (a.ts || 0));
+      return docs.slice(0, 5000);
+    } catch(e) { console.error('loadSessions', e); return []; }
+  }
+
+  async function saveSession(record) {
+    try {
+      await _db.collection('sessions').doc(record.sessionId).set(record);
+    } catch(e) { console.error('saveSession', e); }
+  }
 
   // ==============================================================
   // USER PROFILES
   // ==============================================================
-  function loadUsers() {
-    try { return JSON.parse(localStorage.getItem(LS_USERS) || '{}'); } catch(e) { return {}; }
-  }
-  function saveUsers(data) { localStorage.setItem(LS_USERS, JSON.stringify(data)); }
-
-  function getUser(name) {
-    const users = loadUsers();
-    return users[name] || null;
-  }
-
-  function upsertUser(name, patch) {
-    const users = loadUsers();
-    users[name] = Object.assign(users[name] || {}, patch);
-    saveUsers(users);
-    return users[name];
-  }
 
   // One-way hash for Entry ID and security answers
   function hashEntry(s) {
@@ -696,8 +783,8 @@ const App = (() => {
     return new Date().toISOString().slice(0, 10); // YYYY-MM-DD
   }
 
-  function updateStreak(name) {
-    const user = getUser(name) || {};
+  async function updateStreak(name) {
+    const user = (await getUser(name)) || {};
     const today = todayStr();
     if (user.lastActiveDate === today) return; // already counted today
 
@@ -713,13 +800,16 @@ const App = (() => {
     } else {
       streak = 1; // streak broken, restart
     }
-    upsertUser(name, { streak, lastActiveDate: today });
+    await upsertUser(name, { streak, lastActiveDate: today });
   }
 
-  function getStreak(name) {
-    const user = getUser(name);
+  // getStreak is called from sync rendering contexts; we cache the value on the user object
+  // after loginAs loads it. See _cachedUsers below.
+  const _cachedUsers = {};
+
+  function getStreakCached(name) {
+    const user = _cachedUsers[name];
     if (!user) return 0;
-    // If last active was not today or yesterday, streak is broken
     const today = todayStr();
     const yesterday = new Date();
     yesterday.setDate(yesterday.getDate() - 1);
@@ -731,25 +821,11 @@ const App = (() => {
   }
 
   // ==============================================================
-  // LEADERBOARD STORAGE
-  // ==============================================================
-  function loadLB() { try { return JSON.parse(localStorage.getItem(LS_LB) || '[]'); } catch(e) { return []; } }
-  function saveLB(data) { localStorage.setItem(LS_LB, JSON.stringify(data)); }
-
-  // ==============================================================
   // SESSION LOG  (full detail — source of truth)
   // ==============================================================
-  function loadSessions() {
-    try { return JSON.parse(localStorage.getItem(LS_SESSIONS) || '[]'); } catch(e) { return []; }
-  }
-  function saveSessions(data) { localStorage.setItem(LS_SESSIONS, JSON.stringify(data)); }
-
-  function saveScore(entry) {
-    // 1. Save to leaderboard index (fast lookup for rankings)
-    const lb = loadLB();
-    lb.unshift(entry);
-    lb.splice(2000);
-    saveLB(lb);
+  async function saveScore(entry) {
+    // 1. Save to leaderboard collection
+    await saveLBEntry(entry);
 
     // 2. Save full session record (source of truth for admin)
     const record = Object.assign({}, entry, {
@@ -762,17 +838,16 @@ const App = (() => {
         isCorrect: a.isCorrect
       }))
     });
-    const allSessions = loadSessions();
-    allSessions.unshift(record);
-    allSessions.splice(5000); // keep last 5000 full session records
-    saveSessions(allSessions);
+    await saveSession(record);
   }
 
   // ==============================================================
   // LOGIN SCREEN SETUP
   // ==============================================================
-  function initLoginScreen() {
-    const users = loadUsers();
+  async function initLoginScreen() {
+    const users = await loadUsers();
+    // Cache for sync streak lookups
+    Object.assign(_cachedUsers, users);
     const names = Object.keys(users);
     const section = document.getElementById('returning-users-section');
     const divider = document.getElementById('login-divider');
@@ -801,7 +876,7 @@ const App = (() => {
         chip.appendChild(avWrap);
         chip.appendChild(document.createTextNode(name));
 
-        const streak = getStreak(name);
+        const streak = getStreakCached(name);
         if (streak >= 3) {
           const fl = document.createElement('span');
           fl.className = 'flame-emoji';
@@ -852,8 +927,8 @@ const App = (() => {
     hero:   'Who is your childhood hero?'
   };
 
-  function showForgotFlow() {
-    const user = getUser(pendingVerifyName);
+  async function showForgotFlow() {
+    const user = await getUser(pendingVerifyName);
     if (!user || !user.secqKey) {
       showToast('No security question set for this account. Please contact an admin to reset your Entry ID.');
       return;
@@ -877,8 +952,8 @@ const App = (() => {
     document.getElementById('forgot-confirm-entry').value = '';
   }
 
-  function submitForgot() {
-    const user    = getUser(pendingVerifyName);
+  async function submitForgot() {
+    const user    = await getUser(pendingVerifyName);
     const answer  = document.getElementById('forgot-answer-input').value.trim();
     const newEntry = document.getElementById('forgot-new-entry').value.trim();
     const confirm  = document.getElementById('forgot-confirm-entry').value.trim();
@@ -888,29 +963,34 @@ const App = (() => {
       document.getElementById('forgot-answer-input').classList.add('error');
       showToast('Incorrect answer. Try again.'); return;
     }
-    if (!newEntry) { showToast('Please enter a new Entry ID'); return; }
-    if (newEntry.length < 3) { showToast('Entry ID must be at least 3 characters'); return; }
-    if (newEntry !== confirm) { showToast('Entry IDs do not match'); return; }
+    if (!newEntry) { showToast('Please enter a new PIN'); return; }
+    if (!/^\d+$/.test(newEntry)) { showToast('PIN must be numbers only'); return; }
+    if (newEntry.length < 4 || newEntry.length > 6) { showToast('PIN must be 4–6 digits'); return; }
+    if (newEntry !== confirm) { showToast('PINs do not match'); return; }
 
-    upsertUser(pendingVerifyName, { entryIdHash: hashEntry(newEntry) });
+    await upsertUser(pendingVerifyName, { entryIdHash: hashEntry(newEntry) });
     showToast('✅ Entry ID reset! You can now log in with your new Entry ID.');
     cancelVerify();
   }
 
-  function handleLogin() {
+  async function handleLogin() {
     if (pendingVerifyName) {
       // Returning user: verify Entry ID
       const entryRaw = document.getElementById('verify-entryid-input').value.trim();
       if (!entryRaw) {
         document.getElementById('verify-entryid-input').classList.add('error');
-        showToast('Please enter your Entry ID'); return;
+        showToast('Please enter your PIN'); return;
       }
-      const user = getUser(pendingVerifyName);
+      if (!/^\d+$/.test(entryRaw)) {
+        document.getElementById('verify-entryid-input').classList.add('error');
+        showToast('PIN must be numbers only'); return;
+      }
+      const user = await getUser(pendingVerifyName);
       if (!user || hashEntry(entryRaw) !== user.entryIdHash) {
         document.getElementById('verify-entryid-input').classList.add('error');
         showToast('Incorrect Entry ID. Try again.'); return;
       }
-      loginAs(pendingVerifyName);
+      await loginAs(pendingVerifyName);
     } else {
       // New user registration (or cross-device re-registration)
       const nameVal  = document.getElementById('username-input').value.trim();
@@ -918,40 +998,45 @@ const App = (() => {
       const secqKey  = document.getElementById('secq-select').value;
       const secqAns  = document.getElementById('secq-answer').value.trim();
       if (!nameVal) { document.getElementById('username-input').classList.add('error'); showToast('Please enter your name'); return; }
-      if (!entryRaw) { document.getElementById('entryid-input').classList.add('error'); showToast('Please set an Entry ID'); return; }
-      if (!secqKey)  { showToast('Please choose a security question'); return; }
-      if (!secqAns)  { document.getElementById('secq-answer').classList.add('error'); showToast('Please answer your security question'); return; }
+      if (!entryRaw) { document.getElementById('entryid-input').classList.add('error'); showToast('Please set a PIN'); return; }
+      if (!/^\d+$/.test(entryRaw)) { document.getElementById('entryid-input').classList.add('error'); showToast('PIN must be numbers only'); return; }
+      if (entryRaw.length < 4 || entryRaw.length > 6) { document.getElementById('entryid-input').classList.add('error'); showToast('PIN must be 4–6 digits'); return; }
 
-      const existing = getUser(nameVal);
+      const existing = await getUser(nameVal);
       if (existing) {
         // ---- Cross-device re-registration ----
-        // Allow if Entry ID matches — carries over avatar/streak from this device (nothing)
-        // but lets them use their existing leaderboard scores
+        // Only Entry ID is needed — no security question required
         if (hashEntry(entryRaw) !== existing.entryIdHash) {
           showToast('That name already exists and the Entry ID does not match. Use the chip above to log in, or choose a different name.');
           return;
         }
-        // Entry ID matches — silently log in, optionally update security question
-        upsertUser(nameVal, { secqKey, secqHash: hashEntry(normaliseAnswer(secqAns)) });
         showToast('Welcome back, ' + nameVal + '! Profile linked to this device.');
-        loginAs(nameVal);
+        await loginAs(nameVal);
         return;
       }
-      // Brand-new user
-      upsertUser(nameVal, {
+      // Brand-new user — security question is required
+      if (!secqKey)  { showToast('Please choose a security question'); return; }
+      if (!secqAns)  { document.getElementById('secq-answer').classList.add('error'); showToast('Please answer your security question'); return; }
+      await upsertUser(nameVal, {
         entryIdHash: hashEntry(entryRaw),
         secqKey,
         secqHash: hashEntry(normaliseAnswer(secqAns)),
         streak: 0, lastActiveDate: null, avatar: null
       });
-      loginAs(nameVal);
+      await loginAs(nameVal);
     }
   }
 
-  function loginAs(name, isRestore) {
+  async function loginAs(name, isRestore) {
     username = name;
     sessionStorage.setItem('istqb_session_user', name); // persist across refresh
-    if (!isRestore) updateStreak(name);
+    // Load and cache the user for sync streak reads
+    const userData = await getUser(name);
+    if (userData) _cachedUsers[name] = userData;
+    if (!isRestore) await updateStreak(name);
+    // Re-cache after streak update
+    const updated = await getUser(name);
+    if (updated) _cachedUsers[name] = updated;
     updateHeaderAvatar();
     document.getElementById('header-username').textContent = '👤 ' + username;
     document.getElementById('screen-username').classList.add('hidden');
@@ -959,7 +1044,7 @@ const App = (() => {
     showSection('home');
     // Show streak notification only on fresh login (not restore)
     if (!isRestore) {
-      const s = getStreak(name);
+      const s = getStreakCached(name);
       if (s >= 3) showToast('🔥 ' + s + '-day streak! Keep it up, ' + name + '!');
       else if (s === 1) showToast('Welcome, ' + name + '! Day 1 streak started.');
     }
@@ -981,7 +1066,7 @@ const App = (() => {
   }
 
   function updateHeaderAvatar() {
-    const user = getUser(username);
+    const user = _cachedUsers[username];
     const wrap = document.getElementById('header-avatar-wrap');
     if (user && user.avatar) {
       wrap.innerHTML = '<img src="' + user.avatar + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%">';
@@ -995,8 +1080,9 @@ const App = (() => {
   // ==============================================================
   let pendingAvatarDataUrl = null;
 
-  function openProfile() {
-    const user = getUser(username) || {};
+  async function openProfile() {
+    const user = (await getUser(username)) || {};
+    if (user) _cachedUsers[username] = user;
     pendingAvatarDataUrl = null;
     const preview = document.getElementById('avatar-preview-modal');
     if (user.avatar) {
@@ -1005,7 +1091,7 @@ const App = (() => {
       preview.textContent = '👤';
     }
     document.getElementById('profile-username-display').value = username;
-    const streak = getStreak(username);
+    const streak = getStreakCached(username);
     document.getElementById('streak-count-modal').textContent = streak;
     document.getElementById('streak-desc-modal').textContent =
       streak >= 3 ? '🔥 You\'re on fire! ' + streak + '-day streak!' :
@@ -1020,9 +1106,11 @@ const App = (() => {
     pendingAvatarDataUrl = null;
   }
 
-  function saveProfile() {
+  async function saveProfile() {
     if (pendingAvatarDataUrl) {
-      upsertUser(username, { avatar: pendingAvatarDataUrl });
+      await upsertUser(username, { avatar: pendingAvatarDataUrl });
+      const updated = await getUser(username);
+      if (updated) _cachedUsers[username] = updated;
       updateHeaderAvatar();
       showToast('Profile picture updated!');
     }
@@ -1274,7 +1362,7 @@ const App = (() => {
       ts: now.getTime(), // millisecond timestamp for period filtering
       timeTaken: mode === 'exam' ? timeTaken : null
     };
-    saveScore(entry);
+    saveScore(entry); // fire-and-forget — don't block showing results
     showSection('results');
   }
 
@@ -1326,8 +1414,11 @@ const App = (() => {
     return 0; // 'all'
   }
 
-  function renderLeaderboard() {
-    let lb = loadLB();
+  async function renderLeaderboard() {
+    const container = document.getElementById('lb-content');
+    container.innerHTML = '<div class="no-data">Loading…</div>';
+
+    let lb = await loadLB();
 
     // Filter by mode
     lb = lb.filter(e => e.mode === lbMode);
@@ -1353,7 +1444,6 @@ const App = (() => {
       if (!seen[e.username]) { seen[e.username] = true; ranked.push(e); }
     });
 
-    const container = document.getElementById('lb-content');
     const periodLabel = { all: 'All Time', daily: 'Today', weekly: 'This Week', monthly: 'This Month' }[lbPeriod];
     const modeLabel = lbMode === 'exam' ? '🎯 Exam' : '📝 Practice';
     const diffLabel = lbMode === 'practice' && lbDiff !== 'all' ? ' · ' + lbDiff.charAt(0).toUpperCase() + lbDiff.slice(1) : '';
@@ -1363,7 +1453,9 @@ const App = (() => {
       return;
     }
 
-    const users = loadUsers();
+    // Load all users fresh so avatars/streaks from other devices show correctly
+    const users = await loadUsers();
+    Object.assign(_cachedUsers, users);
     const top = ranked.slice(0, 50);
 
     let html = '<p style="font-size:0.8rem;color:var(--muted);margin-bottom:12px">' + modeLabel + diffLabel + ' · ' + periodLabel + ' · Top ' + top.length + ' learners</p>';
@@ -1376,7 +1468,7 @@ const App = (() => {
       const isMe = entry.username === username;
       const badgeCls = entry.pct >= 75 ? 'pass' : entry.pct >= 65 ? 'ok' : 'fail';
       const userProfile = users[entry.username] || {};
-      const streak = getStreak(entry.username);
+      const streak = getStreakCached(entry.username);
       const hasFlame = streak >= 3;
 
       // Avatar cell
@@ -1427,12 +1519,37 @@ const App = (() => {
   // INIT
   // ==============================================================
   // Restore session if user refreshed the page
-  const _savedUser = sessionStorage.getItem('istqb_session_user');
-  if (_savedUser && getUser(_savedUser)) {
-    loginAs(_savedUser, true);
-  } else {
-    initLoginScreen();
-  }
+  (async () => {
+    const _savedUser = sessionStorage.getItem('istqb_session_user');
+    if (_savedUser) {
+      const u = await getUser(_savedUser);
+      if (u) {
+        await loginAs(_savedUser, true);
+        return;
+      }
+    }
+    await initLoginScreen();
+  })();
+
+  // Show/hide security question based on whether the typed name already exists in Firestore
+  let _secqCheckTimer = null;
+  document.getElementById('username-input').addEventListener('input', function() {
+    this.classList.remove('error');
+    clearTimeout(_secqCheckTimer);
+    const val = this.value.trim();
+    if (!val) {
+      // Empty — show secq fields (new user assumed until proven otherwise)
+      document.getElementById('secq-fields').classList.remove('hidden');
+      document.getElementById('new-user-hint').classList.add('hidden');
+      return;
+    }
+    _secqCheckTimer = setTimeout(async () => {
+      const existing = await getUser(val);
+      const isNew = !existing;
+      document.getElementById('secq-fields').classList.toggle('hidden', !isNew);
+      document.getElementById('new-user-hint').classList.toggle('hidden', isNew);
+    }, 400); // debounce 400ms after user stops typing
+  });
 
   // Enter key support
   document.getElementById('username-input').addEventListener('keypress', e => { if (e.key === 'Enter') handleLogin(); });
@@ -1440,7 +1557,7 @@ const App = (() => {
   document.getElementById('verify-entryid-input').addEventListener('keypress', e => { if (e.key === 'Enter') handleLogin(); });
 
   // Clear error styling on type
-  ['username-input','entryid-input','verify-entryid-input','secq-answer','forgot-answer-input','forgot-new-entry','forgot-confirm-entry'].forEach(id => {
+  ['entryid-input','verify-entryid-input','secq-answer','forgot-answer-input','forgot-new-entry','forgot-confirm-entry'].forEach(id => {
     document.getElementById(id).addEventListener('input', function() { this.classList.remove('error'); });
   });
 

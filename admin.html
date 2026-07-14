@@ -4,6 +4,41 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ISTQB Admin Panel</title>
+<script>
+  // ── Anti-cheat / content protection ──────────────────────────────
+  document.addEventListener('contextmenu', e => e.preventDefault());
+  document.addEventListener('keydown', e => {
+    const k = e.key;
+    if (k === 'PrintScreen') { e.preventDefault(); return; }
+    if (k === 'Tab') { e.preventDefault(); return; }
+    if (k === 'F12') { e.preventDefault(); return; }
+    if (e.ctrlKey || e.metaKey) {
+      if (e.shiftKey && ['i','I','j','J','c','C'].includes(k)) { e.preventDefault(); return; }
+      if (['u','U'].includes(k)) { e.preventDefault(); return; }
+      if (['s','S'].includes(k)) { e.preventDefault(); return; }
+      if (['p','P'].includes(k)) { e.preventDefault(); return; }
+    }
+  });
+  document.addEventListener('copy', e => e.preventDefault());
+  document.addEventListener('DOMContentLoaded', () => {
+    document.documentElement.style.userSelect = 'none';
+    document.documentElement.style.webkitUserSelect = 'none';
+  });
+</script>
+<!-- Firebase SDK (compat) -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script>
+  const _fbApp = firebase.initializeApp({
+    apiKey: "AIzaSyBim4icQZo1t0t21nBLSk_P4m7sdBP9W-c",
+    authDomain: "myistqbreviewer.firebaseapp.com",
+    projectId: "myistqbreviewer",
+    storageBucket: "myistqbreviewer.firebasestorage.app",
+    messagingSenderId: "463803904658",
+    appId: "1:463803904658:web:c21d4f41c9455887412c4b"
+  });
+  const _db = firebase.firestore();
+</script>
 <style>
   :root {
     --primary: #1a237e;
@@ -376,12 +411,9 @@
 
 <script>
 const Admin = (() => {
-  // ---- Storage keys (must match index.html) ----
-  const LS_LB       = 'istqb_leaderboard_v3';
-  const LS_USERS    = 'istqb_users_v1';
-  const LS_SESSIONS = 'istqb_sessions_v1';
-  const ADMIN_USER  = 'admin';
-  const LS_ADMIN_PASS = 'istqb_admin_pass_v1'; // stores HASH only, never plain text
+  // ---- Admin auth (still localStorage — admin password is local config, not shared data) ----
+  const ADMIN_USER    = 'admin';
+  const LS_ADMIN_PASS = 'istqb_admin_pass_v1';
 
   // One-way hash (djb2) — plain text never touches localStorage
   function hashPass(s) {
@@ -417,13 +449,62 @@ const Admin = (() => {
 
   let currentTab = 'sessions';
 
-  // ---- Storage helpers ----
-  function loadSessions() { try { return JSON.parse(localStorage.getItem(LS_SESSIONS) || '[]'); } catch(e) { return []; } }
-  function saveSessions(d) { localStorage.setItem(LS_SESSIONS, JSON.stringify(d)); }
-  function loadLB()       { try { return JSON.parse(localStorage.getItem(LS_LB) || '[]'); } catch(e) { return []; } }
-  function saveLB(d)      { localStorage.setItem(LS_LB, JSON.stringify(d)); }
-  function loadUsers()    { try { return JSON.parse(localStorage.getItem(LS_USERS) || '{}'); } catch(e) { return {}; } }
-  function saveUsers(d)   { localStorage.setItem(LS_USERS, JSON.stringify(d)); }
+  // ---- Firestore helpers ----
+  async function loadSessions() {
+    try {
+      const snap = await _db.collection('sessions').get();
+      const docs = snap.docs.map(d => d.data());
+      docs.sort((a, b) => (b.ts || 0) - (a.ts || 0));
+      return docs.slice(0, 5000);
+    } catch(e) { console.error('loadSessions',e); return []; }
+  }
+  async function deleteSessionDoc(sid) {
+    try { await _db.collection('sessions').doc(sid).delete(); } catch(e) { console.error(e); }
+  }
+  async function deleteSessionsByFilter(filterFn) {
+    // Batch-delete all sessions matching filterFn
+    try {
+      const snap = await _db.collection('sessions').get();
+      const batch = _db.batch();
+      snap.docs.forEach(doc => { if (filterFn(doc.data())) batch.delete(doc.ref); });
+      await batch.commit();
+    } catch(e) { console.error(e); }
+  }
+  async function loadLB() {
+    try {
+      const snap = await _db.collection('leaderboard').get();
+      const docs = snap.docs.map(d => d.data());
+      docs.sort((a, b) => (b.ts || 0) - (a.ts || 0));
+      return docs.slice(0, 2000);
+    } catch(e) { console.error('loadLB',e); return []; }
+  }
+  async function deleteLBByFilter(filterFn) {
+    try {
+      const snap = await _db.collection('leaderboard').get();
+      const batch = _db.batch();
+      snap.docs.forEach(doc => { if (filterFn(doc.data())) batch.delete(doc.ref); });
+      await batch.commit();
+    } catch(e) { console.error(e); }
+  }
+  async function clearAllLB() {
+    try {
+      const snap = await _db.collection('leaderboard').get();
+      const batch = _db.batch();
+      snap.docs.forEach(doc => batch.delete(doc.ref));
+      await batch.commit();
+    } catch(e) { console.error(e); }
+  }
+  async function loadUsers() {
+    try {
+      const snap = await _db.collection('users').get();
+      const result = {};
+      snap.forEach(doc => { result[doc.id] = doc.data(); });
+      return result;
+    } catch(e) { console.error('loadUsers',e); return {}; }
+  }
+  async function deleteUserDoc(name) {
+    try { await _db.collection('users').doc(name).delete(); } catch(e) { console.error(e); }
+  }
 
   // ---- Auth ----
   function login() {
@@ -451,16 +532,14 @@ const Admin = (() => {
   }
 
   // ---- Init ----
-  function initAdmin() {
-    refreshStats();
-    populateUserDropdowns();
+  async function initAdmin() {
+    await refreshStats();
+    await populateUserDropdowns();
     showTab('sessions');
   }
 
-  function refreshStats() {
-    const sessions = loadSessions();
-    const users    = loadUsers();
-    const lb       = loadLB();
+  async function refreshStats() {
+    const [sessions, users] = await Promise.all([loadSessions(), loadUsers()]);
     const examCount = sessions.filter(s => s.mode === 'exam').length;
     const avgPct = sessions.length ? Math.round(sessions.reduce((a,b) => a + (b.pct||0), 0) / sessions.length) : 0;
     document.getElementById('stat-total-sessions').textContent = sessions.length.toLocaleString();
@@ -469,10 +548,9 @@ const Admin = (() => {
     document.getElementById('stat-avg-score').textContent      = avgPct + '%';
   }
 
-  function populateUserDropdowns() {
-    const sessions = loadSessions();
-    const users    = loadUsers();
-    const names    = [...new Set([...Object.keys(users), ...sessions.map(s => s.username)])].sort();
+  async function populateUserDropdowns() {
+    const [sessions, users] = await Promise.all([loadSessions(), loadUsers()]);
+    const names = [...new Set([...Object.keys(users), ...sessions.map(s => s.username)])].sort();
 
     ['f-user','lb-f-user','clear-user-select','delete-user-select'].forEach(id => {
       const sel = document.getElementById(id);
@@ -494,9 +572,9 @@ const Admin = (() => {
       document.getElementById('tab-panel-' + t).classList.toggle('hidden', t !== tab);
       document.getElementById('tab-' + t).classList.toggle('active', t === tab);
     });
-    if (tab === 'sessions')    { applyFilters(); }
-    if (tab === 'users')       { renderUsersTable(); }
-    if (tab === 'leaderboard') { renderLbTable(); }
+    if (tab === 'sessions')    { applyFilters(); }       // async, fire-and-forget
+    if (tab === 'users')       { renderUsersTable(); }   // async, fire-and-forget
+    if (tab === 'leaderboard') { renderLbTable(); }      // async, fire-and-forget
     if (tab === 'settings')    { clearPwFields(); }
   }
 
@@ -516,15 +594,15 @@ const Admin = (() => {
     if (newPw.length < 6)           { errEl.textContent = 'New password must be at least 6 characters.'; return; }
     if (newPw !== confirm)          { errEl.textContent = 'Passwords do not match.'; return; }
 
-    localStorage.setItem(LS_ADMIN_PASS, hashPass(newPw)); // store hash only
+    localStorage.setItem(LS_ADMIN_PASS, hashPass(newPw)); // admin password stays local
     clearPwFields();
     showToast('✅ Password updated successfully!');
   }
 
   // ---- SESSIONS TABLE ----
-  function applyFilters() {
+  async function applyFilters() {
     sessPage = 1;
-    const sessions = loadSessions();
+    const sessions = await loadSessions();
     const fMode   = document.getElementById('f-mode').value;
     const fDiff   = document.getElementById('f-diff').value;
     const fUser   = document.getElementById('f-user').value;
@@ -598,23 +676,17 @@ const Admin = (() => {
   function sessGoPage(p) { sessPage = p; renderSessionsTable(); }
 
   function deleteSession(sid) {
-    showConfirm('Delete Session', 'Remove this session record permanently?', () => {
-      let sessions = loadSessions();
-      sessions = sessions.filter(s => s.sessionId !== sid);
-      saveSessions(sessions);
-      // Also remove from LB
-      let lb = loadLB();
-      // Can't easily match by sessionId in LB (LB doesn't store it), so skip LB deletion for individual records
-      refreshStats();
-      applyFilters();
+    showConfirm('Delete Session', 'Remove this session record permanently?', async () => {
+      await deleteSessionDoc(sid);
+      await refreshStats();
+      await applyFilters();
       showToast('Session deleted.');
     });
   }
 
   // ---- USERS TABLE ----
-  function renderUsersTable() {
-    const users = loadUsers();
-    const sessions = loadSessions();
+  async function renderUsersTable() {
+    const [users, sessions] = await Promise.all([loadUsers(), loadSessions()]);
     const names = Object.keys(users).sort();
     document.getElementById('user-count-label').textContent = names.length + ' registered user' + (names.length !== 1 ? 's' : '');
 
@@ -649,8 +721,8 @@ const Admin = (() => {
   }
 
   // ---- LEADERBOARD TABLE ----
-  function renderLbTable() {
-    const lb     = loadLB();
+  async function renderLbTable() {
+    const lb     = await loadLB();
     const fMode  = document.getElementById('lb-f-mode').value;
     const fUser  = document.getElementById('lb-f-user').value;
 
@@ -708,53 +780,62 @@ const Admin = (() => {
   function clearUserData() {
     const name = document.getElementById('clear-user-select').value;
     if (!name) { showToast('Please select a user first.'); return; }
-    showConfirm('Clear User Scores', 'Delete all session records and leaderboard entries for "' + name + '"?', () => {
-      let sessions = loadSessions(); sessions = sessions.filter(s => s.username !== name); saveSessions(sessions);
-      let lb = loadLB(); lb = lb.filter(e => e.username !== name); saveLB(lb);
-      refreshStats(); populateUserDropdowns(); if (currentTab === 'sessions') applyFilters(); if (currentTab === 'users') renderUsersTable(); if (currentTab === 'leaderboard') renderLbTable();
+    showConfirm('Clear User Scores', 'Delete all session records and leaderboard entries for "' + name + '"?', async () => {
+      await deleteSessionsByFilter(s => s.username === name);
+      await deleteLBByFilter(e => e.username === name);
+      await refreshStats(); await populateUserDropdowns();
+      if (currentTab === 'sessions') await applyFilters();
+      if (currentTab === 'users') await renderUsersTable();
+      if (currentTab === 'leaderboard') await renderLbTable();
       showToast('Scores cleared for ' + name + '.');
     });
   }
 
   function clearOneUserScores(name) {
-    showConfirm('Clear Scores', 'Delete all records for "' + name + '"?', () => {
-      let sessions = loadSessions(); sessions = sessions.filter(s => s.username !== name); saveSessions(sessions);
-      let lb = loadLB(); lb = lb.filter(e => e.username !== name); saveLB(lb);
-      refreshStats(); renderUsersTable();
+    showConfirm('Clear Scores', 'Delete all records for "' + name + '"?', async () => {
+      await deleteSessionsByFilter(s => s.username === name);
+      await deleteLBByFilter(e => e.username === name);
+      await refreshStats(); await renderUsersTable();
       showToast('Scores cleared for ' + name + '.');
     });
   }
 
   function deleteOneUser(name) {
-    showConfirm('Delete User Profile', 'Remove the profile for "' + name + '"? Score records are NOT deleted.', () => {
-      const users = loadUsers(); delete users[name]; saveUsers(users);
-      refreshStats(); populateUserDropdowns(); renderUsersTable();
+    showConfirm('Delete User Profile', 'Remove the profile for "' + name + '"? Score records are NOT deleted.', async () => {
+      await deleteUserDoc(name);
+      await refreshStats(); await populateUserDropdowns(); await renderUsersTable();
       showToast('Profile deleted for ' + name + '.');
     });
   }
 
   function clearByMode() {
     const m = document.getElementById('clear-mode-select').value;
-    showConfirm('Clear ' + cap(m) + ' Data', 'Delete all ' + m + ' session records and leaderboard entries?', () => {
-      let sessions = loadSessions(); sessions = sessions.filter(s => s.mode !== m); saveSessions(sessions);
-      let lb = loadLB(); lb = lb.filter(e => e.mode !== m); saveLB(lb);
-      refreshStats(); if (currentTab === 'sessions') applyFilters(); if (currentTab === 'leaderboard') renderLbTable();
+    showConfirm('Clear ' + cap(m) + ' Data', 'Delete all ' + m + ' session records and leaderboard entries?', async () => {
+      await deleteSessionsByFilter(s => s.mode === m);
+      await deleteLBByFilter(e => e.mode === m);
+      await refreshStats();
+      if (currentTab === 'sessions') await applyFilters();
+      if (currentTab === 'leaderboard') await renderLbTable();
       showToast(cap(m) + ' data cleared.');
     });
   }
 
   function clearAllLeaderboard() {
-    showConfirm('Clear All Leaderboard', 'Wipe the ENTIRE leaderboard index? This cannot be undone.', () => {
-      saveLB([]);
-      refreshStats(); if (currentTab === 'leaderboard') renderLbTable();
+    showConfirm('Clear All Leaderboard', 'Wipe the ENTIRE leaderboard index? This cannot be undone.', async () => {
+      await clearAllLB();
+      await refreshStats();
+      if (currentTab === 'leaderboard') await renderLbTable();
       showToast('Leaderboard cleared.');
     });
   }
 
   function clearAllSessions() {
-    showConfirm('Clear ALL Data', 'Delete ALL session records AND the leaderboard? This CANNOT be undone.', () => {
-      saveSessions([]); saveLB([]);
-      refreshStats(); if (currentTab === 'sessions') applyFilters(); if (currentTab === 'leaderboard') renderLbTable();
+    showConfirm('Clear ALL Data', 'Delete ALL session records AND the leaderboard? This CANNOT be undone.', async () => {
+      await deleteSessionsByFilter(() => true);
+      await clearAllLB();
+      await refreshStats();
+      if (currentTab === 'sessions') await applyFilters();
+      if (currentTab === 'leaderboard') await renderLbTable();
       showToast('All session data cleared.');
     });
   }
@@ -766,8 +847,8 @@ const Admin = (() => {
   }
 
   // ---- EXPORT CSV ----
-  function exportCSV() {
-    const sessions = filteredSessions.length ? filteredSessions : loadSessions();
+  async function exportCSV() {
+    const sessions = filteredSessions.length ? filteredSessions : await loadSessions();
     if (!sessions.length) { showToast('No data to export.'); return; }
     const cols = ['sessionId','username','mode','difficulty','score','total','pct','pass','date','time','timeTaken'];
     let csv = cols.join(',') + '\n';
@@ -814,7 +895,7 @@ const Admin = (() => {
   if (sessionStorage.getItem('istqb_admin_session') === '1') {
     document.getElementById('screen-login').classList.add('hidden');
     document.getElementById('screen-admin').classList.remove('hidden');
-    initAdmin();
+    initAdmin(); // async, fire-and-forget
   }
 
   // ---- ENTER KEY on login ----
