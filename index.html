@@ -767,18 +767,21 @@ const App = (() => {
     }
   }
 
-  function loginAs(name) {
+  function loginAs(name, isRestore) {
     username = name;
-    updateStreak(name);
+    sessionStorage.setItem('istqb_session_user', name); // persist across refresh
+    if (!isRestore) updateStreak(name);
     updateHeaderAvatar();
     document.getElementById('header-username').textContent = '👤 ' + username;
     document.getElementById('screen-username').classList.add('hidden');
     document.getElementById('screen-main').classList.remove('hidden');
     showSection('home');
-    // Show streak notification if applicable
-    const s = getStreak(name);
-    if (s >= 3) showToast('🔥 ' + s + '-day streak! Keep it up, ' + name + '!');
-    else if (s === 1) showToast('Welcome, ' + name + '! Day 1 streak started.');
+    // Show streak notification only on fresh login (not restore)
+    if (!isRestore) {
+      const s = getStreak(name);
+      if (s >= 3) showToast('🔥 ' + s + '-day streak! Keep it up, ' + name + '!');
+      else if (s === 1) showToast('Welcome, ' + name + '! Day 1 streak started.');
+    }
   }
 
   function updateHeaderAvatar() {
@@ -1227,7 +1230,13 @@ const App = (() => {
   // ==============================================================
   // INIT
   // ==============================================================
-  initLoginScreen();
+  // Restore session if user refreshed the page
+  const _savedUser = sessionStorage.getItem('istqb_session_user');
+  if (_savedUser && getUser(_savedUser)) {
+    loginAs(_savedUser, true);
+  } else {
+    initLoginScreen();
+  }
 
   // Enter key support
   document.getElementById('username-input').addEventListener('keypress', e => { if (e.key === 'Enter') handleLogin(); });
