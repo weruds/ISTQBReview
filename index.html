@@ -768,6 +768,11 @@
           <div class="lb-diff-tab" id="lb-diff-hard" onclick="App.setLbDiff('hard')">Hard</div>
           <div class="lb-diff-tab" id="lb-diff-extreme" onclick="App.setLbDiff('extreme')">Extreme</div>
         </div>
+        <!-- Sort tabs (practice only) -->
+        <div class="lb-diff-tabs" id="lb-sort-tabs" style="margin-top:-6px">
+          <div class="lb-diff-tab active" id="lb-sort-score" onclick="App.setLbSort('score')">🏆 Top Score</div>
+          <div class="lb-diff-tab" id="lb-sort-fastest" onclick="App.setLbSort('fastest')">⚡ Fastest</div>
+        </div>
         <div id="lb-content"></div>
       </div>
     </div>
@@ -834,6 +839,7 @@ const App = (() => {
   let lbMode = 'practice';
   let lbPeriod = 'all';
   let lbDiff = 'all';
+  let lbSort = 'score'; // 'score' | 'fastest'
 
   // ==============================================================
   // FIRESTORE HELPERS
@@ -1877,10 +1883,11 @@ const App = (() => {
       pfMsg.textContent = pct >= 80 ? '⭐ Excellent!' : pct >= 65 ? '✅ Good job!' : '📚 Keep practicing!';
       pfMsg.style.color = pct >= 65 ? 'var(--success)' : 'var(--warning)';
     }
-    if (mode === 'exam') {
+    // Show time taken for both modes
+    if (timeTaken) {
       const mm = Math.floor(timeTaken / 60), ss = timeTaken % 60;
       const td = document.getElementById('time-taken-display');
-      td.textContent = 'Time taken: ' + mm + 'm ' + ss + 's';
+      td.textContent = 'Time taken: ' + mm + 'm ' + String(ss).padStart(2,'0') + 's';
       td.classList.remove('hidden');
     } else {
       document.getElementById('time-taken-display').classList.add('hidden');
@@ -1927,10 +1934,19 @@ const App = (() => {
     ['practice','exam','following'].forEach(t => {
       document.getElementById('lb-tab-' + t).classList.toggle('active', t === m);
     });
-    // Show/hide difficulty tabs (only for practice), period row (not for following)
+    // Show/hide difficulty + sort tabs (only for practice), period row (not for following)
     document.getElementById('lb-diff-tabs').style.display = m === 'practice' ? 'flex' : 'none';
+    document.getElementById('lb-sort-tabs').style.display = m === 'practice' ? 'flex' : 'none';
     document.getElementById('lb-period-row').style.display = m === 'following' ? 'none' : '';
-    if (m !== 'practice') lbDiff = 'all';
+    if (m !== 'practice') { lbDiff = 'all'; lbSort = 'score'; }
+    renderLeaderboard();
+  }
+
+  function setLbSort(s) {
+    lbSort = s;
+    ['score','fastest'].forEach(t => {
+      document.getElementById('lb-sort-' + t).classList.toggle('active', t === s);
+    });
     renderLeaderboard();
   }
 
@@ -1997,8 +2013,16 @@ const App = (() => {
       }
     }
 
-    // Sort: best % first, then best score
-    lb = lb.sort((a, b) => b.pct - a.pct || b.score - a.score);
+    const isFastest = lbMode === 'practice' && lbSort === 'fastest';
+
+    if (isFastest) {
+      // Fastest mode: only entries with a recorded time, sort ascending by timeTaken
+      lb = lb.filter(e => e.timeTaken != null && e.timeTaken > 0);
+      lb = lb.sort((a, b) => a.timeTaken - b.timeTaken || b.pct - a.pct);
+    } else {
+      // Default: best % first, then best score
+      lb = lb.sort((a, b) => b.pct - a.pct || b.score - a.score);
+    }
 
     // Deduplicate: keep best entry per user for ranking
     const seen = {};
@@ -2010,21 +2034,24 @@ const App = (() => {
     const periodLabel = { all: 'All Time', daily: 'Today', weekly: 'This Week', monthly: 'This Month' }[lbPeriod];
     const modeLabel = lbMode === 'exam' ? '🎯 Exam' : lbMode === 'following' ? '👥 Following' : '📝 Practice';
     const diffLabel = lbMode === 'practice' && lbDiff !== 'all' ? ' · ' + lbDiff.charAt(0).toUpperCase() + lbDiff.slice(1) : '';
+    const sortLabel = isFastest ? ' · ⚡ Fastest' : '';
 
     if (ranked.length === 0) {
       const emptyMsg = lbMode === 'following'
         ? 'You\'re not following anyone yet. Hit <strong>Follow +</strong> on any player in the leaderboard.'
-        : 'No scores for ' + modeLabel + diffLabel + ' — ' + periodLabel + '.<br>Complete a session to appear here!';
+        : isFastest
+          ? 'No timed practice sessions yet. Complete a Practice session to appear here!'
+          : 'No scores for ' + modeLabel + diffLabel + ' — ' + periodLabel + '.<br>Complete a session to appear here!';
       container.innerHTML = '<div class="no-data">' + emptyMsg + '</div>';
       return;
     }
 
     const top = ranked.slice(0, 50);
 
-    const subLabel = lbMode === 'following' ? ' · ' + following.length + ' following' : diffLabel + ' · ' + periodLabel;
-    let html = '<p style="font-size:0.8rem;color:var(--muted);margin-bottom:12px">' + modeLabel + subLabel + ' · Top ' + top.length + ' learners</p>';
+    const subLabel = lbMode === 'following' ? ' · ' + following.length + ' following' : diffLabel + sortLabel + ' · ' + periodLabel;
+    let html = '<p style="font-size:0.8rem;color:var(--muted);margin-bottom:12px">' + modeLabel + subLabel + ' · ' + top.length + ' players</p>';
     html += '<div style="overflow-x:auto"><table class="lb-table"><thead><tr><th>Rank</th><th>Player</th><th>Score</th>';
-    if (lbMode === 'practice') html += '<th>Difficulty</th>';
+    if (lbMode === 'practice') html += '<th>Difficulty</th><th>⏱ Time</th>';
     html += '<th>Date</th><th></th></tr></thead><tbody>';
 
     top.forEach((entry, i) => {
@@ -2035,6 +2062,7 @@ const App = (() => {
       const streak = getStreakCached(entry.username);
       const hasFlame = streak >= 3;
       const isFollowing = following.includes(entry.username);
+      const isFastestEntry = isFastest && i === 0; // top in fastest sort = overall fastest
 
       // Avatar cell
       let avatarHtml = '';
@@ -2055,6 +2083,16 @@ const App = (() => {
           ? '<button class="follow-btn is-following" onclick="App.unfollowUser(\'' + escapeHtml(entry.username) + '\')" title="Unfollow">Following ✓</button>'
           : '<button class="follow-btn not-following" onclick="App.followUser(\'' + escapeHtml(entry.username) + '\')" title="Follow">Follow +</button>';
 
+      // Time cell
+      let timeHtml = '—';
+      if (entry.timeTaken != null && entry.timeTaken > 0) {
+        const mm = Math.floor(entry.timeTaken / 60), ss = entry.timeTaken % 60;
+        const timeStr = mm + 'm ' + String(ss).padStart(2, '0') + 's';
+        timeHtml = isFastestEntry
+          ? '<span style="color:var(--accent);font-weight:700">⚡ ' + timeStr + '</span>'
+          : '<span style="color:var(--muted)">' + timeStr + '</span>';
+      }
+
       html += '<tr' + (isMe ? ' class="highlight"' : '') + '>';
       html += '<td><span class="rank-medal">' + medal + '</span></td>';
       html += '<td style="display:flex;align-items:center;gap:8px;min-width:140px">' + avatarHtml + '<span>' + escapeHtml(entry.username) + streakHtml + (isMe ? ' <span style="font-size:0.72rem;color:var(--accent)">◀ You</span>' : '') + '</span></td>';
@@ -2062,6 +2100,7 @@ const App = (() => {
       if (lbMode === 'practice') {
         const dBadge = entry.difficulty && entry.difficulty !== 'all' ? entry.difficulty : 'mixed';
         html += '<td style="font-size:0.8rem;text-transform:capitalize">' + dBadge + '</td>';
+        html += '<td style="font-size:0.82rem">' + timeHtml + '</td>';
       }
       html += '<td style="font-size:0.8rem;color:var(--muted)">' + entry.date + '</td>';
       html += '<td>' + followBtn + '</td>';
@@ -2148,7 +2187,7 @@ const App = (() => {
     showForgotFlow, cancelForgot, submitForgot,
     showSection, selectMode, setDiff, startSession,
     selectAnswer, nextQuestion, finishSession, confirmQuit,
-    setLbMode, setLbPeriod, setLbDiff,
+    setLbMode, setLbPeriod, setLbDiff, setLbSort,
     followUser, unfollowUser,
     closeBanner,
     setSidebarLbMode,
