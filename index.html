@@ -768,11 +768,6 @@
           <div class="lb-diff-tab" id="lb-diff-hard" onclick="App.setLbDiff('hard')">Hard</div>
           <div class="lb-diff-tab" id="lb-diff-extreme" onclick="App.setLbDiff('extreme')">Extreme</div>
         </div>
-        <!-- Sort tabs (practice only) -->
-        <div class="lb-diff-tabs" id="lb-sort-tabs" style="margin-top:-6px">
-          <div class="lb-diff-tab active" id="lb-sort-score" onclick="App.setLbSort('score')">🏆 Top Score</div>
-          <div class="lb-diff-tab" id="lb-sort-fastest" onclick="App.setLbSort('fastest')">⚡ Fastest</div>
-        </div>
         <div id="lb-content"></div>
       </div>
     </div>
@@ -839,8 +834,6 @@ const App = (() => {
   let lbMode = 'practice';
   let lbPeriod = 'all';
   let lbDiff = 'all';
-  let lbSort = 'score'; // 'score' | 'fastest'
-
   // ==============================================================
   // FIRESTORE HELPERS
   // ==============================================================
@@ -848,7 +841,7 @@ const App = (() => {
 
   async function loadUsers() {
     try {
-      const snap = await _db.collection('users').get();
+      const snap = await _db.collection('users').get({ source: 'server' });
       const result = {};
       snap.forEach(doc => { result[doc.id] = doc.data(); });
       return result;
@@ -871,7 +864,7 @@ const App = (() => {
 
   async function loadLB() {
     try {
-      const snap = await _db.collection('leaderboard').get();
+      const snap = await _db.collection('leaderboard').get({ source: 'server' });
       const docs = snap.docs.map(d => d.data());
       docs.sort((a, b) => (b.ts || 0) - (a.ts || 0));
       return docs.slice(0, 2000);
@@ -887,7 +880,7 @@ const App = (() => {
 
   async function loadSessions() {
     try {
-      const snap = await _db.collection('sessions').get();
+      const snap = await _db.collection('sessions').get({ source: 'server' });
       const docs = snap.docs.map(d => d.data());
       docs.sort((a, b) => (b.ts || 0) - (a.ts || 0));
       return docs.slice(0, 5000);
@@ -916,7 +909,7 @@ const App = (() => {
 
   async function loadAllRecords() {
     try {
-      const snap = await _db.collection('records').get();
+      const snap = await _db.collection('records').get({ source: 'server' });
       const result = {};
       snap.forEach(doc => { result[doc.id] = doc.data(); });
       return result;
@@ -1936,17 +1929,8 @@ const App = (() => {
     });
     // Show/hide difficulty + sort tabs (only for practice), period row (not for following)
     document.getElementById('lb-diff-tabs').style.display = m === 'practice' ? 'flex' : 'none';
-    document.getElementById('lb-sort-tabs').style.display = m === 'practice' ? 'flex' : 'none';
     document.getElementById('lb-period-row').style.display = m === 'following' ? 'none' : '';
-    if (m !== 'practice') { lbDiff = 'all'; lbSort = 'score'; }
-    renderLeaderboard();
-  }
-
-  function setLbSort(s) {
-    lbSort = s;
-    ['score','fastest'].forEach(t => {
-      document.getElementById('lb-sort-' + t).classList.toggle('active', t === s);
-    });
+    if (m !== 'practice') { lbDiff = 'all'; }
     renderLeaderboard();
   }
 
@@ -2013,16 +1997,8 @@ const App = (() => {
       }
     }
 
-    const isFastest = lbMode === 'practice' && lbSort === 'fastest';
-
-    if (isFastest) {
-      // Fastest mode: only entries with a recorded time, sort ascending by timeTaken
-      lb = lb.filter(e => e.timeTaken != null && e.timeTaken > 0);
-      lb = lb.sort((a, b) => a.timeTaken - b.timeTaken || b.pct - a.pct);
-    } else {
-      // Default: best % first, then best score
-      lb = lb.sort((a, b) => b.pct - a.pct || b.score - a.score);
-    }
+    // Sort: best % first → best score → fastest time as tiebreaker
+    lb = lb.sort((a, b) => b.pct - a.pct || b.score - a.score || (a.timeTaken && b.timeTaken ? a.timeTaken - b.timeTaken : 0));
 
     // Deduplicate: keep best entry per user for ranking
     const seen = {};
@@ -2034,21 +2010,18 @@ const App = (() => {
     const periodLabel = { all: 'All Time', daily: 'Today', weekly: 'This Week', monthly: 'This Month' }[lbPeriod];
     const modeLabel = lbMode === 'exam' ? '🎯 Exam' : lbMode === 'following' ? '👥 Following' : '📝 Practice';
     const diffLabel = lbMode === 'practice' && lbDiff !== 'all' ? ' · ' + lbDiff.charAt(0).toUpperCase() + lbDiff.slice(1) : '';
-    const sortLabel = isFastest ? ' · ⚡ Fastest' : '';
 
     if (ranked.length === 0) {
       const emptyMsg = lbMode === 'following'
         ? 'You\'re not following anyone yet. Hit <strong>Follow +</strong> on any player in the leaderboard.'
-        : isFastest
-          ? 'No timed practice sessions yet. Complete a Practice session to appear here!'
-          : 'No scores for ' + modeLabel + diffLabel + ' — ' + periodLabel + '.<br>Complete a session to appear here!';
+        : 'No scores for ' + modeLabel + diffLabel + ' — ' + periodLabel + '.<br>Complete a session to appear here!';
       container.innerHTML = '<div class="no-data">' + emptyMsg + '</div>';
       return;
     }
 
     const top = ranked.slice(0, 50);
 
-    const subLabel = lbMode === 'following' ? ' · ' + following.length + ' following' : diffLabel + sortLabel + ' · ' + periodLabel;
+    const subLabel = lbMode === 'following' ? ' · ' + following.length + ' following' : diffLabel + ' · ' + periodLabel;
     let html = '<p style="font-size:0.8rem;color:var(--muted);margin-bottom:12px">' + modeLabel + subLabel + ' · ' + top.length + ' players</p>';
     html += '<div style="overflow-x:auto"><table class="lb-table"><thead><tr><th>Rank</th><th>Player</th><th>Score</th>';
     if (lbMode === 'practice') html += '<th>Difficulty</th><th>⏱ Time</th>';
@@ -2062,8 +2035,6 @@ const App = (() => {
       const streak = getStreakCached(entry.username);
       const hasFlame = streak >= 3;
       const isFollowing = following.includes(entry.username);
-      const isFastestEntry = isFastest && i === 0; // top in fastest sort = overall fastest
-
       // Avatar cell
       let avatarHtml = '';
       const avInner = userProfile.avatar
@@ -2088,9 +2059,7 @@ const App = (() => {
       if (entry.timeTaken != null && entry.timeTaken > 0) {
         const mm = Math.floor(entry.timeTaken / 60), ss = entry.timeTaken % 60;
         const timeStr = mm + 'm ' + String(ss).padStart(2, '0') + 's';
-        timeHtml = isFastestEntry
-          ? '<span style="color:var(--accent);font-weight:700">⚡ ' + timeStr + '</span>'
-          : '<span style="color:var(--muted)">' + timeStr + '</span>';
+        timeHtml = '<span style="color:var(--muted)">' + timeStr + '</span>';
       }
 
       html += '<tr' + (isMe ? ' class="highlight"' : '') + '>';
@@ -2187,7 +2156,7 @@ const App = (() => {
     showForgotFlow, cancelForgot, submitForgot,
     showSection, selectMode, setDiff, startSession,
     selectAnswer, nextQuestion, finishSession, confirmQuit,
-    setLbMode, setLbPeriod, setLbDiff, setLbSort,
+    setLbMode, setLbPeriod, setLbDiff,
     followUser, unfollowUser,
     closeBanner,
     setSidebarLbMode,

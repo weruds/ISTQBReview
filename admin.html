@@ -452,7 +452,7 @@ const Admin = (() => {
   // ---- Firestore helpers ----
   async function loadSessions() {
     try {
-      const snap = await _db.collection('sessions').get();
+      const snap = await _db.collection('sessions').get({ source: 'server' });
       const docs = snap.docs.map(d => d.data());
       docs.sort((a, b) => (b.ts || 0) - (a.ts || 0));
       return docs.slice(0, 5000);
@@ -464,7 +464,7 @@ const Admin = (() => {
   async function deleteSessionsByFilter(filterFn) {
     // Batch-delete all sessions matching filterFn
     try {
-      const snap = await _db.collection('sessions').get();
+      const snap = await _db.collection('sessions').get({ source: 'server' });
       const batch = _db.batch();
       snap.docs.forEach(doc => { if (filterFn(doc.data())) batch.delete(doc.ref); });
       await batch.commit();
@@ -472,7 +472,7 @@ const Admin = (() => {
   }
   async function loadLB() {
     try {
-      const snap = await _db.collection('leaderboard').get();
+      const snap = await _db.collection('leaderboard').get({ source: 'server' });
       const docs = snap.docs.map(d => d.data());
       docs.sort((a, b) => (b.ts || 0) - (a.ts || 0));
       return docs.slice(0, 2000);
@@ -480,7 +480,7 @@ const Admin = (() => {
   }
   async function deleteLBByFilter(filterFn) {
     try {
-      const snap = await _db.collection('leaderboard').get();
+      const snap = await _db.collection('leaderboard').get({ source: 'server' });
       const batch = _db.batch();
       snap.docs.forEach(doc => { if (filterFn(doc.data())) batch.delete(doc.ref); });
       await batch.commit();
@@ -488,7 +488,7 @@ const Admin = (() => {
   }
   async function clearAllLB() {
     try {
-      const snap = await _db.collection('leaderboard').get();
+      const snap = await _db.collection('leaderboard').get({ source: 'server' });
       const batch = _db.batch();
       snap.docs.forEach(doc => batch.delete(doc.ref));
       await batch.commit();
@@ -496,7 +496,7 @@ const Admin = (() => {
   }
   async function loadUsers() {
     try {
-      const snap = await _db.collection('users').get();
+      const snap = await _db.collection('users').get({ source: 'server' });
       const result = {};
       snap.forEach(doc => { result[doc.id] = doc.data(); });
       return result;
