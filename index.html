@@ -2000,11 +2000,13 @@ const App = (() => {
     // Sort: best % first → best score → fastest time as tiebreaker
     lb = lb.sort((a, b) => b.pct - a.pct || b.score - a.score || (a.timeTaken && b.timeTaken ? a.timeTaken - b.timeTaken : 0));
 
-    // Deduplicate: keep best entry per user for ranking
+    // Deduplicate: keep best entry per user (per difficulty when viewing all difficulties)
     const seen = {};
     const ranked = [];
+    const dedupeByDiff = lbMode === 'practice' && lbDiff === 'all';
     lb.forEach(e => {
-      if (!seen[e.username]) { seen[e.username] = true; ranked.push(e); }
+      const key = dedupeByDiff ? e.username + '|' + (e.difficulty || 'all') : e.username;
+      if (!seen[key]) { seen[key] = true; ranked.push(e); }
     });
 
     const periodLabel = { all: 'All Time', daily: 'Today', weekly: 'This Week', monthly: 'This Month' }[lbPeriod];
