@@ -83,12 +83,15 @@
   /* Large monitor (1400px+) */
   @media (min-width: 1400px) {
     html { font-size: 17px; }
-    .container { max-width: 1100px; }
+    .container { max-width: 1400px; }
   }
-  /* Standard desktop / laptop (1024–1399px) — default, no override needed */
+  /* Standard desktop / laptop (1024–1399px) */
+  @media (min-width: 1024px) {
+    .container { max-width: 1200px; }
+  }
   /* Tablet landscape / small laptop (768–1023px) */
   @media (max-width: 1023px) {
-    .container { max-width: 720px; padding: 20px 14px; }
+    .container { max-width: 100%; padding: 20px 14px; }
     header h1 { font-size: 1.1rem; }
   }
   /* Tablet portrait / large phone (540–767px) */
@@ -144,8 +147,24 @@
   .header-avatar { width: 36px; height: 36px; border-radius: 50%; object-fit: cover; border: 2px solid rgba(255,255,255,0.5); background: rgba(255,255,255,0.2); display: flex; align-items: center; justify-content: center; font-size: 1rem; overflow: hidden; flex-shrink: 0; }
   .header-avatar img { width: 100%; height: 100%; object-fit: cover; }
 
-  /* ===== CONTAINER ===== */
+  /* ===== CONTAINER + TWO-COLUMN LAYOUT ===== */
   .container { max-width: 860px; margin: 0 auto; padding: 24px 16px; }
+
+  /* On desktop, split main app into content + sidebar */
+  @media (min-width: 1024px) {
+    .container { max-width: 1200px; }
+    #screen-main .container { display: grid; grid-template-columns: 1fr 340px; gap: 24px; align-items: start; }
+    #main-nav { grid-column: 1 / -1; }  /* nav spans full width */
+    #section-home, #section-quiz, #section-results, #section-leaderboard { min-width: 0; }
+    #app-sidebar { display: flex; flex-direction: column; gap: 0; position: sticky; top: 16px; }
+  }
+  @media (min-width: 1400px) {
+    .container { max-width: 1400px; }
+    #screen-main .container { grid-template-columns: 1fr 380px; gap: 28px; }
+  }
+  @media (max-width: 1023px) {
+    #app-sidebar { display: none; }
+  }
 
   /* ===== CARDS ===== */
   .card { background: var(--card); border-radius: 12px; padding: 28px; box-shadow: 0 2px 12px rgba(0,0,0,0.08); margin-bottom: 20px; }
@@ -692,6 +711,35 @@
         <h2>Review Answers</h2>
         <div class="review-list" id="review-list"></div>
       </div>
+    </div>
+
+    <!-- SIDEBAR (desktop only) -->
+    <div id="app-sidebar">
+
+      <!-- Quick Stats -->
+      <div class="card fade-in" style="margin-bottom:16px">
+        <h2 style="font-size:1rem;margin-bottom:14px">📊 Your Stats</h2>
+        <div id="sidebar-stats" style="color:var(--muted);font-size:0.85rem">Loading…</div>
+      </div>
+
+      <!-- Mini Leaderboard Top 5 -->
+      <div class="card fade-in" style="margin-bottom:16px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+          <h2 style="font-size:1rem;margin:0">🏆 Top 5</h2>
+          <div style="display:flex;gap:6px">
+            <button id="sb-lb-practice" onclick="App.setSidebarLbMode('practice')" style="font-size:0.7rem;font-weight:700;padding:3px 8px;border-radius:10px;border:1.5px solid var(--primary);background:var(--primary);color:white;cursor:pointer">Practice</button>
+            <button id="sb-lb-exam" onclick="App.setSidebarLbMode('exam')" style="font-size:0.7rem;font-weight:700;padding:3px 8px;border-radius:10px;border:1.5px solid var(--border);background:white;color:var(--muted);cursor:pointer">Exam</button>
+          </div>
+        </div>
+        <div id="sidebar-lb" style="color:var(--muted);font-size:0.85rem">Loading…</div>
+      </div>
+
+      <!-- Practice Records mini -->
+      <div class="card fade-in">
+        <h2 style="font-size:1rem;margin-bottom:12px">⚡ Records</h2>
+        <div id="sidebar-records" style="color:var(--muted);font-size:0.85rem">Loading…</div>
+      </div>
+
     </div>
 
     <!-- LEADERBOARD SECTION -->
@@ -1285,12 +1333,112 @@ const App = (() => {
       document.querySelector('[onclick*="\'home\'"]').classList.add('active');
       renderRecords();      // fire-and-forget
       renderPreparedness(); // fire-and-forget
+      renderSidebar();      // fire-and-forget
     }
     if (sec === 'leaderboard') {
       document.querySelector('[onclick*="\'leaderboard\'"]').classList.add('active');
       renderLeaderboard();
     }
     if (sec === 'quiz' || sec === 'home') stopTimer();
+  }
+
+  // ==============================================================
+  // SIDEBAR
+  // ==============================================================
+  let _sbLbMode = 'practice';
+
+  function setSidebarLbMode(m) {
+    _sbLbMode = m;
+    const btns = { practice: 'sb-lb-practice', exam: 'sb-lb-exam' };
+    Object.entries(btns).forEach(([mode, id]) => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      if (mode === m) {
+        el.style.background = 'var(--primary)'; el.style.color = 'white'; el.style.borderColor = 'var(--primary)';
+      } else {
+        el.style.background = 'white'; el.style.color = 'var(--muted)'; el.style.borderColor = 'var(--border)';
+      }
+    });
+    renderSidebarLb();
+  }
+
+  async function renderSidebar() {
+    renderSidebarStats();   // fire-and-forget
+    renderSidebarLb();      // fire-and-forget
+    renderSidebarRecords(); // fire-and-forget
+  }
+
+  async function renderSidebarStats() {
+    const el = document.getElementById('sidebar-stats');
+    if (!el) return;
+    const all = await loadLB();
+    const mine = all.filter(e => e.username === username);
+    const practiceSessions = mine.filter(e => e.mode === 'practice');
+    const examSessions     = mine.filter(e => e.mode === 'exam');
+    const bestExam   = examSessions.length ? Math.max(...examSessions.map(e => e.pct)) : null;
+    const bestPrac   = practiceSessions.length ? Math.max(...practiceSessions.map(e => e.pct)) : null;
+    const passedExams = examSessions.filter(e => e.pass).length;
+
+    el.innerHTML =
+      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">' +
+        sidebarStat('Practice sessions', practiceSessions.length) +
+        sidebarStat('Exam sessions', examSessions.length) +
+        sidebarStat('Best practice', bestPrac !== null ? bestPrac + '%' : '—') +
+        sidebarStat('Best exam', bestExam !== null ? bestExam + '%' : '—') +
+        sidebarStat('Exams passed', passedExams) +
+        sidebarStat('Pass rate', examSessions.length ? Math.round(passedExams/examSessions.length*100)+'%' : '—') +
+      '</div>';
+  }
+
+  function sidebarStat(label, val) {
+    return '<div style="background:var(--bg);border-radius:8px;padding:10px;text-align:center">' +
+      '<div style="font-size:1.1rem;font-weight:800;color:var(--primary)">' + val + '</div>' +
+      '<div style="font-size:0.7rem;color:var(--muted);margin-top:2px">' + label + '</div>' +
+    '</div>';
+  }
+
+  async function renderSidebarLb() {
+    const el = document.getElementById('sidebar-lb');
+    if (!el) return;
+    const all = await loadLB();
+    let lb = all.filter(e => e.mode === _sbLbMode).sort((a,b) => b.pct - a.pct || b.score - a.score);
+    // deduplicate
+    const seen = {}, ranked = [];
+    lb.forEach(e => { if (!seen[e.username]) { seen[e.username] = true; ranked.push(e); } });
+    const top5 = ranked.slice(0, 5);
+    if (!top5.length) { el.innerHTML = '<div style="color:var(--muted);font-style:italic;font-size:0.82rem">No scores yet.</div>'; return; }
+
+    el.innerHTML = top5.map((e, i) => {
+      const medal  = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : (i + 1) + '.';
+      const isMe   = e.username === username;
+      const cls    = e.pct >= 75 ? 'var(--success)' : e.pct >= 65 ? 'var(--warning)' : 'var(--danger)';
+      return '<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border)' + (i === top5.length-1 ? ';border:none' : '') + '">' +
+        '<span style="font-size:0.9rem;min-width:22px">' + medal + '</span>' +
+        '<span style="flex:1;font-size:0.82rem;font-weight:' + (isMe ? '800' : '600') + ';color:var(--text)">' + escapeHtml(e.username) + (isMe ? ' <span style="font-size:0.65rem;color:var(--accent)">◀</span>' : '') + '</span>' +
+        '<span style="font-size:0.82rem;font-weight:700;color:' + cls + '">' + e.pct + '%</span>' +
+      '</div>';
+    }).join('');
+  }
+
+  async function renderSidebarRecords() {
+    const el = document.getElementById('sidebar-records');
+    if (!el) return;
+    const [fastest, highest] = await Promise.all([loadRecord('fastest_practice'), loadRecord('highest_practice')]);
+    function fmtT(s) { return Math.floor(s/60)+'m'+String(s%60).padStart(2,'0')+'s'; }
+    const rows = [
+      { icon: '🏆', label: 'Highest Score', val: highest ? highest.pct+'%' : '—', holder: highest ? highest.username : null, isMe: highest && highest.username === username },
+      { icon: '⚡', label: 'Fastest Pass', val: fastest ? fmtT(fastest.timeTaken) : '—', holder: fastest ? fastest.username : null, isMe: fastest && fastest.username === username }
+    ];
+    el.innerHTML = rows.map(r =>
+      '<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)">' +
+        '<span style="font-size:1.2rem">' + r.icon + '</span>' +
+        '<div style="flex:1">' +
+          '<div style="font-size:0.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.4px">' + r.label + '</div>' +
+          '<div style="font-size:1rem;font-weight:800;color:var(--primary)">' + r.val + '</div>' +
+          (r.holder ? '<div style="font-size:0.72rem;color:var(--muted)">' + escapeHtml(r.holder) + (r.isMe ? ' <span style="color:var(--accent)">◀ you</span>' : '') + '</div>' : '') +
+        '</div>' +
+      '</div>'
+    ).join('') + '<div style="font-size:0.7rem;color:var(--muted);margin-top:8px">Practice mode only</div>';
   }
 
   // ==============================================================
