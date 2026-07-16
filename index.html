@@ -640,8 +640,8 @@
       <!-- PRACTICE RECORDS CARD -->
       <div class="card fade-in" id="records-card">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px">
-          <h2 style="margin:0">⚡ Practice Records</h2>
-          <span style="font-size:0.75rem;color:var(--muted)">All-time · Practice mode only</span>
+          <h2 style="margin:0">⚡ Your Practice Records</h2>
+          <span style="font-size:0.75rem;color:var(--muted)">Personal best · Practice mode</span>
         </div>
         <div id="records-body">
           <div style="color:var(--muted);font-size:0.88rem">Loading…</div>
@@ -1544,11 +1544,18 @@ const App = (() => {
   async function renderSidebarRecords() {
     const el = document.getElementById('sidebar-records');
     if (!el) return;
-    const [fastest, highest] = await Promise.all([loadRecord('fastest_practice'), loadRecord('highest_practice')]);
+    const all = await loadLB();
+    const mine = all.filter(e => e.username === username && e.mode === 'practice');
     function fmtT(s) { return Math.floor(s/60)+'m'+String(s%60).padStart(2,'0')+'s'; }
+    const highest = mine.length
+      ? mine.reduce((b, e) => (!b || e.pct > b.pct || (e.pct === b.pct && e.score > b.score)) ? e : b, null)
+      : null;
+    const fastest = mine.filter(e => e.pass && e.timeTaken != null).length
+      ? mine.filter(e => e.pass && e.timeTaken != null).reduce((b, e) => (!b || e.timeTaken < b.timeTaken) ? e : b, null)
+      : null;
     const rows = [
-      { icon: '🏆', label: 'Highest Score', val: highest ? highest.pct+'%' : '—', holder: highest ? highest.username : null, isMe: highest && highest.username === username },
-      { icon: '⚡', label: 'Fastest Pass', val: fastest ? fmtT(fastest.timeTaken) : '—', holder: fastest ? fastest.username : null, isMe: fastest && fastest.username === username }
+      { icon: '🏆', label: 'Your Best Score', val: highest ? highest.pct+'%' : '—' },
+      { icon: '⚡', label: 'Your Fastest Pass', val: fastest ? fmtT(fastest.timeTaken) : '—' }
     ];
     el.innerHTML = rows.map(r =>
       '<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)">' +
@@ -1556,7 +1563,6 @@ const App = (() => {
         '<div style="flex:1">' +
           '<div style="font-size:0.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.4px">' + r.label + '</div>' +
           '<div style="font-size:1rem;font-weight:800;color:var(--primary)">' + r.val + '</div>' +
-          (r.holder ? '<div style="font-size:0.72rem;color:var(--muted)">' + escapeHtml(r.holder) + (r.isMe ? ' <span style="color:var(--accent)">◀ you</span>' : '') + '</div>' : '') +
         '</div>' +
       '</div>'
     ).join('') + '<div style="font-size:0.7rem;color:var(--muted);margin-top:8px">Practice mode only</div>';
@@ -1652,42 +1658,47 @@ const App = (() => {
     const body = document.getElementById('records-body');
     body.innerHTML = '<div style="color:var(--muted);font-size:0.88rem">Loading…</div>';
 
-    const [fastest, highest] = await Promise.all([
-      loadRecord('fastest_practice'),
-      loadRecord('highest_practice')
-    ]);
+    // Load only the current user's own practice sessions
+    const all = await loadLB();
+    const mine = all.filter(e => e.username === username && e.mode === 'practice');
 
     function fmtTime(sec) {
       const m = Math.floor(sec / 60), s = sec % 60;
       return m + 'm ' + String(s).padStart(2, '0') + 's';
     }
 
-    function recBox(cls, crown, title, val, holder, sub, isYou) {
+    function recBox(cls, crown, title, val, sub) {
       return '<div class="rec-box ' + cls + '">' +
         '<span class="rec-crown">' + crown + '</span>' +
         '<div class="rec-title">' + title + '</div>' +
         '<div class="rec-val">' + val + '</div>' +
-        '<div class="rec-holder">👤 ' + escapeHtml(holder) + '</div>' +
         '<div class="rec-sub">' + sub + '</div>' +
-        (isYou ? '<div class="rec-you">◀ That\'s you!</div>' : '') +
         '</div>';
     }
 
+    // Personal best score
+    const highest = mine.length
+      ? mine.reduce((best, e) => (!best || e.pct > best.pct || (e.pct === best.pct && e.score > best.score)) ? e : best, null)
+      : null;
+
+    // Personal fastest passing session
+    const fastest = mine.filter(e => e.pass && e.timeTaken != null).length
+      ? mine.filter(e => e.pass && e.timeTaken != null).reduce((best, e) => (!best || e.timeTaken < best.timeTaken) ? e : best, null)
+      : null;
+
     const highHtml = highest
-      ? recBox('gold', '🏆', 'Highest Score', highest.pct + '%',
-          highest.username, highest.score + '/' + highest.total + ' · ' + highest.date,
-          highest.username === username)
+      ? recBox('gold', '🏆', 'Your Best Score', highest.pct + '%',
+          highest.score + '/' + highest.total + ' · ' + highest.date)
       : '<div class="rec-box" style="opacity:0.5"><span class="rec-crown">🏆</span>' +
-        '<div class="rec-title">Highest Score</div><div class="rec-val">—</div>' +
-        '<div class="rec-sub">No records yet</div></div>';
+        '<div class="rec-title">Your Best Score</div><div class="rec-val">—</div>' +
+        '<div class="rec-sub">No practice sessions yet</div></div>';
 
     const fastHtml = fastest
-      ? recBox('blue', '⚡', 'Fastest (≥70% pass)', fmtTime(fastest.timeTaken),
-          fastest.username, fastest.pct + '% · ' + fastest.date,
-          fastest.username === username)
+      ? recBox('blue', '⚡', 'Your Fastest (≥70% pass)', fmtTime(fastest.timeTaken),
+          fastest.pct + '% · ' + fastest.date)
       : '<div class="rec-box" style="opacity:0.5"><span class="rec-crown">⚡</span>' +
-        '<div class="rec-title">Fastest (≥70% pass)</div><div class="rec-val">—</div>' +
-        '<div class="rec-sub">No records yet</div></div>';
+        '<div class="rec-title">Your Fastest (≥70% pass)</div><div class="rec-val">—</div>' +
+        '<div class="rec-sub">No passing sessions yet</div></div>';
 
     body.innerHTML = '<div class="rec-grid">' + highHtml + fastHtml + '</div>';
   }
