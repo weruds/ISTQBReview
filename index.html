@@ -53,6 +53,7 @@
   const _db = firebase.firestore();
 </script>
 <script src="questions.js"></script>
+<script src="questions-agile.js"></script>
 <style>
   :root {
     --primary: #1a237e;
@@ -264,6 +265,8 @@
   .option-btn.wrong { border-color: var(--danger); background: #ffebee; color: var(--danger); }
   .option-btn.revealed { border-color: var(--success); background: #e8f5e9; color: var(--success); }
   .option-btn:disabled { cursor: default; }
+  .option-btn.selected-pending { border-color: var(--accent); background: #e3f2fd; color: var(--accent); font-weight: 600; }
+  .option-btn.selected-pending:hover { transform: translateX(4px); }
 
   /* Explanation */
   .explanation-box { margin-top: 16px; padding: 14px 16px; border-radius: 8px; background: #e8eaf6; border-left: 4px solid var(--primary); font-size: 0.88rem; line-height: 1.6; color: var(--text); }
@@ -451,6 +454,63 @@
   /* Streak flame emoji pulse */
   .flame-emoji { display: inline-block; animation: flamePulse 0.9s ease-in-out infinite alternate; }
   @keyframes flamePulse { from { transform: scale(1); } to { transform: scale(1.25); } }
+
+  /* ===== TIME ATTACK MODE CARD ===== */
+  .ta-mode-card { border-color: #c62828 !important; }
+  .ta-mode-card:hover, .ta-mode-card.selected { border-color: #c62828 !important; background: #fce4ec !important; }
+  .ta-mode-card h3 { color: #b71c1c !important; }
+  @media (max-width: 539px) { #mode-grid { grid-template-columns: 1fr !important; } }
+  @media (max-width: 767px)  { #mode-grid { grid-template-columns: 1fr 1fr !important; } }
+
+  /* ===== TIME ATTACK STREAK CHIPS ===== */
+  .ta-streak-chip { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 0.82rem; }
+  .ta-s1 { background: #e8f5e9; color: #2e7d32; }
+  .ta-s2 { background: #fff3e0; color: #e65100; }
+  .ta-s3 { background: #fce4ec; color: #c62828; }
+
+  /* ===== TIME ATTACK IN-QUIZ HEADER ===== */
+  .ta-top-bar { display: flex; align-items: center; justify-content: space-between; padding: 10px 0 6px; }
+  .ta-clock-wrap { display: flex; align-items: center; gap: 8px; font-size: 1.5rem; font-weight: 800; color: #b71c1c; }
+  .ta-streak-wrap { display: flex; align-items: center; gap: 6px; font-size: 0.85rem; font-weight: 600; color: var(--text); }
+  .ta-streak-val { font-size: 1.1rem; font-weight: 800; color: #e65100; min-width: 20px; }
+  .ta-pts-display { font-size: 1.1rem; font-weight: 800; color: var(--primary); min-width: 28px; }
+  .ta-bar-track { background: #ffcdd2; border-radius: 6px; height: 10px; margin-bottom: 8px; overflow: hidden; }
+  .ta-bar-fill { height: 100%; border-radius: 6px; background: linear-gradient(90deg, #c62828, #ef5350); transition: width 0.9s linear; }
+  .ta-bar-fill.warn { background: linear-gradient(90deg, #b71c1c, #d32f2f); }
+  .ta-bar-fill.danger { background: linear-gradient(90deg, #7f0000, #b71c1c); }
+  .ta-penalty { text-align: center; font-size: 0.88rem; font-weight: 800; color: #c62828; background: #fce4ec; border-radius: 6px; padding: 4px 0; margin-bottom: 6px; animation: penaltyPop 0.4s ease; }
+  @keyframes penaltyPop { 0% { transform: scale(0.7); opacity: 0; } 60% { transform: scale(1.1); } 100% { transform: scale(1); opacity: 1; } }
+
+  /* Correct / wrong flash on option buttons in Time Attack */
+  .option-btn.ta-correct { border-color: var(--success) !important; background: #e8f5e9 !important; color: var(--success) !important; font-weight: 700 !important; }
+  .option-btn.ta-wrong   { border-color: var(--danger)  !important; background: #ffebee !important; color: var(--danger)  !important; font-weight: 700 !important; }
+
+  /* Streak point badge pop-up */
+  .ta-pts-pop { position: absolute; font-size: 1.1rem; font-weight: 800; color: #2e7d32; animation: ptsPop 0.9s ease forwards; pointer-events: none; white-space: nowrap; }
+  @keyframes ptsPop { 0% { opacity: 1; transform: translateY(0) scale(1); } 80% { opacity: 1; } 100% { opacity: 0; transform: translateY(-40px) scale(1.3); } }
+
+  /* ===== BOMB ANIMATIONS ===== */
+  .ta-bomb-tick { display: inline-block; font-size: 2rem; }
+  .ta-bomb-tick.ticking { animation: bombTick 0.4s ease-in-out infinite alternate; }
+  @keyframes bombTick { from { transform: rotate(-12deg) scale(1); } to { transform: rotate(12deg) scale(1.18); } }
+
+  /* Full-screen explosion overlay */
+  #ta-bomb-overlay { position: fixed; inset: 0; z-index: 5000; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0); pointer-events: none; }
+  #ta-bomb-overlay.exploding { background: rgba(183,28,28,0.92); pointer-events: all; animation: overlayFlash 0.35s ease; }
+  @keyframes overlayFlash { 0% { background: rgba(255,255,0,0.9); } 40% { background: rgba(255,100,0,0.95); } 100% { background: rgba(183,28,28,0.92); } }
+  #ta-bomb-inner { text-align: center; }
+  #ta-bomb-emoji { font-size: 6rem; display: block; }
+  #ta-bomb-emoji.pre-explode { animation: preBomb 0.08s linear infinite; }
+  @keyframes preBomb { 0% { transform: translate(-4px, 0) rotate(-5deg); } 25% { transform: translate(4px, -3px) rotate(5deg); } 50% { transform: translate(-3px, 3px) rotate(-3deg); } 75% { transform: translate(3px, -4px) rotate(4deg); } 100% { transform: translate(0,0) rotate(0); } }
+  #ta-bomb-emoji.exploded { animation: explodePop 0.5s cubic-bezier(0.36,0.07,0.19,0.97) forwards; }
+  @keyframes explodePop { 0% { transform: scale(1); opacity: 1; } 30% { transform: scale(3); opacity: 1; } 100% { transform: scale(0); opacity: 0; } }
+  #ta-times-up { font-size: 2.6rem; font-weight: 900; color: white; opacity: 0; margin-top: 12px; letter-spacing: 2px; }
+  #ta-times-up.show { animation: timesUpFade 0.5s 0.4s ease forwards; }
+  @keyframes timesUpFade { from { opacity: 0; transform: scale(0.6); } to { opacity: 1; transform: scale(1); } }
+
+  /* ===== TIME ATTACK LEADERBOARD TAB ===== */
+  .ta-lb-tab { border-color: #c62828 !important; color: #c62828 !important; }
+  .ta-lb-tab.active { background: #c62828 !important; color: white !important; border-color: #c62828 !important; }
 </style>
 </head>
 <body>
@@ -460,7 +520,12 @@
   <div class="username-card fade-in">
     <div class="logo">📋</div>
     <h1>ISTQB Reviewer</h1>
-    <p>Foundation Level v4.0 — 1,000 Practice Questions</p>
+    <p id="login-subtitle">Foundation Level v4.0 — 1,000 Practice Questions</p>
+    <!-- Bank selector -->
+    <div style="display:flex;gap:8px;justify-content:center;margin-bottom:20px">
+      <button id="bank-btn-fl" onclick="App.setBank('fl')" style="flex:1;padding:9px 12px;border-radius:8px;border:2px solid var(--primary);background:var(--primary);color:white;cursor:pointer;font-size:0.85rem;font-weight:700;transition:all 0.2s">📋 Foundation Level</button>
+      <button id="bank-btn-at" onclick="App.setBank('at')" style="flex:1;padding:9px 12px;border-radius:8px;border:2px solid var(--border);background:white;color:var(--muted);cursor:pointer;font-size:0.85rem;font-weight:700;transition:all 0.2s">🔷 Agile Tester</button>
+    </div>
 
     <!-- Returning users section (shown if any users exist) -->
     <div id="returning-users-section" class="returning-users hidden">
@@ -549,7 +614,7 @@
 <!-- ===== MAIN APP ===== -->
 <div id="screen-main" class="hidden">
   <header>
-    <h1>📋 ISTQB Foundation Level Reviewer</h1>
+    <h1 id="app-header-title">📋 ISTQB Foundation Level Reviewer</h1>
     <div style="display:flex;align-items:center;gap:10px">
       <div class="user-badge" onclick="App.openProfile()" title="Edit profile">
         <div class="header-avatar" id="header-avatar-wrap">👤</div>
@@ -563,6 +628,10 @@
     <div class="nav-menu" id="main-nav">
       <div class="nav-item active" onclick="App.showSection('home')">🏠 Home</div>
       <div class="nav-item" onclick="App.showSection('leaderboard')">🏆 Leaderboard</div>
+      <div style="margin-left:auto;display:flex;gap:6px;align-items:center">
+        <button id="in-app-bank-fl" onclick="App.setBank('fl')" style="padding:5px 12px;border-radius:16px;border:2px solid var(--primary);background:var(--primary);color:white;cursor:pointer;font-size:0.78rem;font-weight:700;transition:all 0.2s">📋 FL</button>
+        <button id="in-app-bank-at" onclick="App.setBank('at')" style="padding:5px 12px;border-radius:16px;border:2px solid var(--border);background:white;color:var(--muted);cursor:pointer;font-size:0.78rem;font-weight:700;transition:all 0.2s">🔷 AT</button>
+      </div>
     </div>
 
     <!-- HOME SECTION -->
@@ -592,7 +661,7 @@
 
       <div class="card fade-in">
         <h2>Choose Your Session</h2>
-        <div class="mode-grid" id="mode-grid">
+        <div class="mode-grid" id="mode-grid" style="grid-template-columns:1fr 1fr 1fr">
           <div class="mode-card selected" data-mode="practice" onclick="App.selectMode('practice')">
             <div class="icon">📝</div>
             <h3>Practice Mode</h3>
@@ -602,6 +671,11 @@
             <div class="icon">🎯</div>
             <h3>Exam Mode</h3>
             <p>40 questions · 60 min timer · Mirrors real ISTQB exam</p>
+          </div>
+          <div class="mode-card ta-mode-card" data-mode="time-attack" onclick="App.selectMode('time-attack')">
+            <div class="icon">💣</div>
+            <h3>Time Attack</h3>
+            <p>20 questions · 90 sec · First answer is final · Streak bonus</p>
           </div>
         </div>
       </div>
@@ -627,7 +701,17 @@
           <option value="Managing the Test Activities">5. Managing the Test Activities</option>
           <option value="Test Tools">6. Test Tools</option>
         </select>
-        <div class="study-note">💡 <strong>Study Tip:</strong> After answering, explanations will be shown. Review them to reinforce your learning.</div>
+        <!-- Agile chapter options (shown when Agile bank active) -->
+        <select class="chapter-select hidden" id="chapter-filter-agile">
+          <option value="all">All Chapters</option>
+          <option value="Agile Software Development">1. Agile Software Development</option>
+          <option value="Fundamental Aspects of Agile Testing">2. Fundamental Aspects of Agile Testing</option>
+          <option value="Agile Testing Methods Techniques and Tools">3. Agile Testing Methods, Techniques and Tools</option>
+          <option value="Communicating Test Status in Agile">4. Communicating Test Status in Agile</option>
+          <option value="Evaluating Exit Criteria and Reporting">5. Evaluating Exit Criteria and Reporting</option>
+          <option value="Agile Test Planning and Risk Management">6. Agile Test Planning and Risk Management</option>
+        </select>
+        <div class="study-note">💡 <strong>Study Tip:</strong> Select an answer, then use <strong>Next →</strong> or <strong>← Back</strong> to navigate freely. Explanations appear after you submit.</div>
       </div>
 
       <!-- EXAM INFO -->
@@ -647,10 +731,35 @@
           <strong style="color:var(--warning)">⚠ Exam Mode Rules:</strong>
           <ul style="margin-top:8px;padding-left:20px;font-size:0.85rem;line-height:1.8">
             <li>No explanations shown during the exam</li>
-            <li>You cannot go back to previous questions</li>
+            <li>You can go back to review and change your answers before submitting</li>
             <li>Timer runs continuously — submission is automatic when time expires</li>
             <li>Results and explanations shown after completion</li>
           </ul>
+        </div>
+      </div>
+
+      <!-- TIME ATTACK INFO -->
+      <div class="card fade-in hidden" id="ta-options">
+        <h2 style="color:#b71c1c">💣 Time Attack</h2>
+        <div class="info-box" style="background:#fce4ec;border-left:4px solid #c62828;padding:16px 20px">
+          <h4 style="color:#b71c1c;margin-bottom:10px">⚡ Rules of Engagement</h4>
+          <div class="info-grid" style="margin-bottom:10px">
+            <div class="info-item">Questions: <span>20</span></div>
+            <div class="info-item">Time: <span>90 seconds</span></div>
+            <div class="info-item">Format: <span>Multiple Choice</span></div>
+            <div class="info-item">Difficulty: <span>Challenging</span></div>
+          </div>
+          <ul style="margin-top:8px;padding-left:20px;font-size:0.85rem;line-height:2">
+            <li><strong>Your first click is your final answer</strong> — no going back</li>
+            <li>❌ Wrong answer <strong>deducts 8 seconds</strong> from your clock</li>
+            <li>✅ Correct answers earn streak bonus points:</li>
+          </ul>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;padding-left:16px">
+            <span class="ta-streak-chip ta-s1">1st correct → <strong>+3 pts</strong></span>
+            <span class="ta-streak-chip ta-s2">2nd in a row → <strong>+4 pts</strong></span>
+            <span class="ta-streak-chip ta-s3">3rd+ in a row → <strong>+5 pts</strong></span>
+          </div>
+          <div style="margin-top:10px;font-size:0.82rem;color:#b71c1c;font-weight:700">⏰ The clock hits 0 — it's game over. Can you beat the bomb?</div>
         </div>
       </div>
 
@@ -661,7 +770,37 @@
 
     <!-- QUIZ SECTION -->
     <div id="section-quiz" class="hidden">
+      <!-- Time Attack bomb overlay (shown at 0) -->
+      <div id="ta-bomb-overlay" class="hidden">
+        <div id="ta-bomb-inner">
+          <div id="ta-bomb-emoji">💣</div>
+          <div id="ta-times-up">💥 Time's Up!</div>
+        </div>
+      </div>
+
       <div class="card fade-in">
+        <!-- Time Attack header bar -->
+        <div id="ta-header" class="hidden">
+          <div class="ta-top-bar">
+            <div class="ta-clock-wrap">
+              <span id="ta-bomb-icon" class="ta-bomb-tick">💣</span>
+              <span id="ta-clock">1:30</span>
+            </div>
+            <div class="ta-streak-wrap">
+              <span id="ta-streak-label">Streak:</span>
+              <span id="ta-streak-count" class="ta-streak-val">0</span>
+              <span id="ta-pts-label">Pts:</span>
+              <span id="ta-points-val" class="ta-pts-display">0</span>
+            </div>
+          </div>
+          <!-- Countdown bar -->
+          <div class="ta-bar-track">
+            <div class="ta-bar-fill" id="ta-bar-fill"></div>
+          </div>
+          <!-- Penalty flash message -->
+          <div id="ta-penalty-msg" class="ta-penalty hidden">−8 seconds!</div>
+        </div>
+
         <div class="quiz-header">
           <div class="quiz-info">
             <span class="q-counter" id="q-counter">Q 1 / 20</span>
@@ -680,8 +819,11 @@
         <div class="explanation-box hidden" id="explanation-box"></div>
         <div class="quiz-nav">
           <button class="btn btn-outline" id="btn-quit" onclick="App.confirmQuit()">⬅ Quit</button>
-          <button class="btn btn-primary hidden" id="btn-next" onclick="App.nextQuestion()">Next →</button>
-          <button class="btn btn-success hidden" id="btn-finish" onclick="App.finishSession()">Finish ✓</button>
+          <div style="display:flex;gap:10px;align-items:center">
+            <button class="btn btn-outline hidden" id="btn-back" onclick="App.prevQuestion()">← Back</button>
+            <button class="btn btn-primary hidden" id="btn-next" onclick="App.nextQuestion()">Next →</button>
+            <button class="btn btn-success hidden" id="btn-finish" onclick="App.finishSession()">Finish ✓</button>
+          </div>
         </div>
       </div>
     </div>
@@ -751,6 +893,7 @@
           <div class="lb-tabs">
             <div class="lb-tab active" id="lb-tab-practice" onclick="App.setLbMode('practice')">📝 Practice</div>
             <div class="lb-tab" id="lb-tab-exam" onclick="App.setLbMode('exam')">🎯 Exam</div>
+            <div class="lb-tab ta-lb-tab" id="lb-tab-time-attack" onclick="App.setLbMode('time-attack')">💣 Time Attack</div>
             <div class="lb-tab" id="lb-tab-following" onclick="App.setLbMode('following')">👥 Following</div>
           </div>
           <div class="lb-period-tabs" id="lb-period-row">
@@ -819,6 +962,7 @@
 const App = (() => {
   // ---- State ----
   let username = '';
+  let activeBank = 'fl';   // 'fl' = Foundation Level, 'at' = Agile Tester
   let mode = 'practice';
   let difficulty = 'all';
   let chapterFilter = 'all';
@@ -826,14 +970,23 @@ const App = (() => {
   let currentIndex = 0;
   let score = 0;
   let answered = false;
+  let pendingChoice = null;   // tentative selection index for current question (not yet committed)
   let timerInterval = null;
   let timeLeft = 0;
   let sessionStartTime = null;
   let timeTaken = 0;
-  let sessionAnswers = [];
+  let sessionAnswers = [];  // array of committed answers, indexed by question order
   let lbMode = 'practice';
   let lbPeriod = 'all';
   let lbDiff = 'all';
+  // ── Time Attack state ──────────────────────────────────────────
+  const TA_TOTAL_TIME  = 90;   // seconds
+  const TA_PENALTY     = 8;    // seconds deducted per wrong answer
+  const TA_QUESTION_COUNT = 20;
+  let taTimeLeft      = TA_TOTAL_TIME;
+  let taPoints        = 0;
+  let taStreak        = 0;     // consecutive correct answers
+  let taTimerInterval = null;
   // ==============================================================
   // FIRESTORE HELPERS
   // ==============================================================
@@ -1015,7 +1168,7 @@ const App = (() => {
     // 2. Save full session record (source of truth for admin)
     const record = Object.assign({}, entry, {
       sessionId: 'sid_' + entry.ts + '_' + Math.random().toString(36).slice(2, 7),
-      answers: sessionAnswers.map(a => ({
+      answers: sessionAnswers.filter(a => a != null).map(a => ({
         qId: a.qId,
         question: a.question,
         chosen: a.chosen,
@@ -1226,6 +1379,7 @@ const App = (() => {
     document.getElementById('header-username').textContent = '👤 ' + username;
     document.getElementById('screen-username').classList.add('hidden');
     document.getElementById('screen-main').classList.remove('hidden');
+    setBank(activeBank);  // sync header title & chapter dropdown to current bank
     showSection('home');
     // Show streak notification only on fresh login (not restore)
     if (!isRestore) {
@@ -1709,6 +1863,7 @@ const App = (() => {
     document.querySelector('[data-mode="' + m + '"]').classList.add('selected');
     document.getElementById('practice-options').classList.toggle('hidden', m !== 'practice');
     document.getElementById('exam-options').classList.toggle('hidden', m !== 'exam');
+    document.getElementById('ta-options').classList.toggle('hidden', m !== 'time-attack');
   }
 
   function setDiff(d) {
@@ -1718,14 +1873,74 @@ const App = (() => {
   }
 
   // ==============================================================
+  // BANK SWITCHER
+  // ==============================================================
+  function setBank(bank) {
+    activeBank = bank;
+    const isAt = bank === 'at';
+    // Login screen buttons
+    const btnFl = document.getElementById('bank-btn-fl');
+    const btnAt = document.getElementById('bank-btn-at');
+    if (btnFl && btnAt) {
+      btnFl.style.background    = isAt ? 'white'            : 'var(--primary)';
+      btnFl.style.color         = isAt ? 'var(--muted)'     : 'white';
+      btnFl.style.borderColor   = isAt ? 'var(--border)'    : 'var(--primary)';
+      btnAt.style.background    = isAt ? '#1565c0'          : 'white';
+      btnAt.style.color         = isAt ? 'white'            : 'var(--muted)';
+      btnAt.style.borderColor   = isAt ? '#1565c0'          : 'var(--border)';
+    }
+    // Login subtitle
+    const sub = document.getElementById('login-subtitle');
+    if (sub) sub.textContent = isAt
+      ? 'Agile Tester Extension — 340 Practice Questions'
+      : 'Foundation Level v4.0 — 1,000 Practice Questions';
+    // Chapter dropdowns (inside the app)
+    const flSel  = document.getElementById('chapter-filter');
+    const atSel  = document.getElementById('chapter-filter-agile');
+    if (flSel && atSel) {
+      flSel.classList.toggle('hidden', isAt);
+      atSel.classList.toggle('hidden', !isAt);
+    }
+    // App header title
+    const appH = document.getElementById('app-header-title');
+    if (appH) appH.textContent = isAt
+      ? '🔷 ISTQB Agile Tester Reviewer'
+      : '📋 ISTQB Foundation Level Reviewer';
+    // In-app nav bank toggle buttons
+    const ifl = document.getElementById('in-app-bank-fl');
+    const iat = document.getElementById('in-app-bank-at');
+    if (ifl && iat) {
+      ifl.style.background  = isAt ? 'white'         : 'var(--primary)';
+      ifl.style.color       = isAt ? 'var(--muted)'  : 'white';
+      ifl.style.borderColor = isAt ? 'var(--border)' : 'var(--primary)';
+      iat.style.background  = isAt ? '#1565c0'       : 'white';
+      iat.style.color       = isAt ? 'white'         : 'var(--muted)';
+      iat.style.borderColor = isAt ? '#1565c0'       : 'var(--border)';
+    }
+    // Reset chapter filter to "All" when switching banks
+    const flSel2 = document.getElementById('chapter-filter');
+    const atSel2 = document.getElementById('chapter-filter-agile');
+    if (flSel2) flSel2.value = 'all';
+    if (atSel2) atSel2.value = 'all';
+  }
+
+  // ==============================================================
   // QUESTION POOL
   // ==============================================================
   function getPool() {
-    let pool = window.QUESTIONS || [];
+    let pool = (activeBank === 'at')
+      ? (window.AGILE_QUESTIONS || [])
+      : (window.QUESTIONS || []);
     if (mode === 'practice') {
       if (difficulty !== 'all') pool = pool.filter(q => q.difficulty === difficulty);
-      const ch = document.getElementById('chapter-filter').value;
+      const chSel = (activeBank === 'at')
+        ? document.getElementById('chapter-filter-agile')
+        : document.getElementById('chapter-filter');
+      const ch = chSel ? chSel.value : 'all';
       if (ch !== 'all') pool = pool.filter(q => q.chapter === ch);
+    }
+    if (mode === 'time-attack') {
+      pool = pool.filter(q => q.difficulty === 'hard' || q.difficulty === 'extreme');
     }
     return pool;
   }
@@ -1752,8 +1967,28 @@ const App = (() => {
     currentIndex = 0;
     score = 0;
     answered = false;
-    sessionAnswers = [];
+    pendingChoice = null;
+    sessionAnswers = [];  // sparse: sessionAnswers[i] = { chosen, isCorrect, ... } once committed
     sessionStartTime = Date.now();
+
+    if (mode === 'time-attack') {
+      taTimeLeft = TA_TOTAL_TIME;
+      taPoints   = 0;
+      taStreak   = 0;
+      document.getElementById('ta-header').classList.remove('hidden');
+      document.getElementById('timer-wrap').classList.add('hidden');
+      document.getElementById('ta-bomb-overlay').classList.add('hidden');
+      document.getElementById('ta-bomb-emoji').className = '';
+      document.getElementById('ta-times-up').className = '';
+      document.getElementById('ta-penalty-msg').classList.add('hidden');
+      updateTaDisplay();
+      showSection('quiz');
+      renderQuestion();
+      startTaTimer();
+      return;
+    }
+
+    document.getElementById('ta-header').classList.add('hidden');
     showSection('quiz');
     renderQuestion();
     if (mode === 'exam') {
@@ -1771,13 +2006,47 @@ const App = (() => {
     document.getElementById('q-counter').textContent = 'Q ' + (currentIndex + 1) + ' / ' + total;
     document.getElementById('q-chapter').textContent = q.chapter;
     const dEl = document.getElementById('q-diff');
-    dEl.textContent = q.difficulty.charAt(0).toUpperCase() + q.difficulty.slice(1);
-    dEl.className = 'q-diff ' + q.difficulty;
+
+    if (mode === 'time-attack') {
+      // Don't reveal hard/extreme label — show "⚡ Challenging" instead
+      dEl.textContent = '⚡ Challenging';
+      dEl.className = 'q-diff hard';
+    } else {
+      dEl.textContent = q.difficulty.charAt(0).toUpperCase() + q.difficulty.slice(1);
+      dEl.className = 'q-diff ' + q.difficulty;
+    }
+
     document.getElementById('progress-bar').style.width = ((currentIndex / total) * 100) + '%';
     document.getElementById('question-text').textContent = (currentIndex + 1) + '. ' + q.question;
     document.getElementById('explanation-box').classList.add('hidden');
     document.getElementById('btn-next').classList.add('hidden');
     document.getElementById('btn-finish').classList.add('hidden');
+
+    if (mode === 'time-attack') {
+      // In Time Attack: no Back button, no Next/Finish buttons — answer auto-advances
+      document.getElementById('btn-back').classList.add('hidden');
+      const optList = document.getElementById('options-list');
+      optList.innerHTML = '';
+      q.options.forEach((opt, i) => {
+        const btn = document.createElement('button');
+        btn.className = 'option-btn';
+        btn.textContent = opt;
+        btn.setAttribute('data-index', i);
+        btn.onclick = () => selectAnswerTA(i);
+        optList.appendChild(btn);
+      });
+      answered = false;
+      return;
+    }
+
+    // Show Back button when not on the first question (practice / exam)
+    const btnBack = document.getElementById('btn-back');
+    btnBack.classList.toggle('hidden', currentIndex === 0);
+
+    // Determine if this question already has a committed or pending answer
+    const committed = sessionAnswers[currentIndex];
+    pendingChoice = committed ? committed.chosen : null;
+
     const optList = document.getElementById('options-list');
     optList.innerHTML = '';
     q.options.forEach((opt, i) => {
@@ -1786,50 +2055,155 @@ const App = (() => {
       btn.textContent = opt;
       btn.setAttribute('data-index', i);
       btn.onclick = () => selectAnswer(i);
+      // Restore tentative highlight if this option was previously chosen
+      if (pendingChoice !== null && i === pendingChoice) {
+        btn.classList.add('selected-pending');
+      }
       optList.appendChild(btn);
     });
     answered = false;
+
+    // Show Next/Finish if there's already a selection (committed or pending)
+    if (pendingChoice !== null) {
+      const isLast = currentIndex === total - 1;
+      if (isLast) document.getElementById('btn-finish').classList.remove('hidden');
+      else document.getElementById('btn-next').classList.remove('hidden');
+    }
   }
 
-  function selectAnswer(chosen) {
+  // ── Time Attack: first click = final answer ────────────────────
+  function selectAnswerTA(chosen) {
     if (answered) return;
     answered = true;
     const q = sessionQuestions[currentIndex];
-    const buttons = document.querySelectorAll('.option-btn');
     const isCorrect = chosen === q.answer;
-    if (isCorrect) score++;
+    const buttons = document.querySelectorAll('.option-btn');
+
+    // Lock all buttons
     buttons.forEach((btn, i) => {
       btn.disabled = true;
-      if (i === q.answer) btn.classList.add('correct');
-      if (i === chosen && !isCorrect) btn.classList.add('wrong');
+      if (i === q.answer) btn.classList.add('ta-correct');
+      if (i === chosen && !isCorrect) btn.classList.add('ta-wrong');
     });
-    sessionAnswers.push({ qId: q.id, question: q.question, chosen, correct: q.answer, isCorrect, options: q.options });
-    if (mode === 'practice') {
-      const expBox = document.getElementById('explanation-box');
-      expBox.innerHTML = '<strong>Explanation:</strong> ' + q.explanation;
-      expBox.classList.remove('hidden');
+
+    // Record answer
+    sessionAnswers[currentIndex] = { qId: q.id, question: q.question, chosen, correct: q.answer, isCorrect, options: q.options };
+
+    if (isCorrect) {
+      taStreak++;
+      const pts = taStreak === 1 ? 3 : taStreak === 2 ? 4 : 5;
+      taPoints += pts;
+      score++;
+      // Floating "+N pts" popup
+      const optEl = buttons[chosen];
+      const pop = document.createElement('span');
+      pop.className = 'ta-pts-pop';
+      pop.textContent = '+' + pts + ' pts';
+      optEl.style.position = 'relative';
+      optEl.appendChild(pop);
+      setTimeout(() => { if (pop.parentNode) pop.parentNode.removeChild(pop); }, 950);
+    } else {
+      taStreak = 0;
+      // Deduct time
+      taTimeLeft = Math.max(0, taTimeLeft - TA_PENALTY);
+      // Show penalty flash
+      const penEl = document.getElementById('ta-penalty-msg');
+      penEl.classList.remove('hidden');
+      // Force reflow to restart animation
+      void penEl.offsetWidth;
+      penEl.style.animation = 'none';
+      void penEl.offsetWidth;
+      penEl.style.animation = '';
+      setTimeout(() => penEl.classList.add('hidden'), 1200);
     }
+
+    updateTaDisplay();
+
+    // Brief pause so user sees result, then auto-advance
     const isLast = currentIndex === sessionQuestions.length - 1;
-    if (isLast) document.getElementById('btn-finish').classList.remove('hidden');
-    else document.getElementById('btn-next').classList.remove('hidden');
+    setTimeout(() => {
+      if (isLast) {
+        endTaSession();
+      } else {
+        currentIndex++;
+        renderQuestion();
+      }
+    }, 900);
   }
 
-  function nextQuestion() { currentIndex++; renderQuestion(); }
+  // Tentatively select an answer — does NOT lock in or grade immediately
+  function selectAnswer(chosen) {
+    pendingChoice = chosen;
+    answered = false; // still editable
 
-  function finishSession() {
+    const buttons = document.querySelectorAll('.option-btn');
+    // Clear any previous tentative highlight
+    buttons.forEach(btn => btn.classList.remove('selected-pending'));
+    // Highlight the chosen option
+    buttons[chosen].classList.add('selected-pending');
+
+    // Reveal Next/Finish button so user can proceed when ready
+    const isLast = currentIndex === sessionQuestions.length - 1;
+    if (isLast) {
+      document.getElementById('btn-next').classList.add('hidden');
+      document.getElementById('btn-finish').classList.remove('hidden');
+    } else {
+      document.getElementById('btn-finish').classList.add('hidden');
+      document.getElementById('btn-next').classList.remove('hidden');
+    }
+  }
+
+  // Commit the pending answer for the current question, then advance
+  function commitAnswer() {
+    if (pendingChoice === null) return false;
+    const q = sessionQuestions[currentIndex];
+    const isCorrect = pendingChoice === q.answer;
+    // Replace if already committed (user changed answer via Back)
+    sessionAnswers[currentIndex] = { qId: q.id, question: q.question, chosen: pendingChoice, correct: q.answer, isCorrect, options: q.options };
+    return true;
+  }
+
+  function nextQuestion() {
+    if (pendingChoice === null) { showToast('Please select an answer before continuing.'); return; }
+    commitAnswer();
+    currentIndex++;
+    pendingChoice = null;
+    renderQuestion();
+  }
+
+  function prevQuestion() {
+    // Commit any pending selection for the current question before going back
+    if (pendingChoice !== null) commitAnswer();
+    currentIndex--;
+    pendingChoice = null;
+    renderQuestion();
+  }
+
+  function finishSession(force) {
+    if (!force && pendingChoice === null && sessionAnswers[currentIndex] === undefined) {
+      showToast('Please select an answer before finishing.');
+      return;
+    }
+    commitAnswer();
     stopTimer();
     timeTaken = Math.floor((Date.now() - sessionStartTime) / 1000); // works for both modes
+    // Recalculate score from committed answers (handles edited answers)
+    score = sessionAnswers.filter(a => a && a.isCorrect).length;
     showResults();
   }
 
   function confirmQuit() {
     if (confirm('Are you sure you want to quit this session? Progress will be lost.')) {
-      stopTimer(); showSection('home');
+      stopTimer();
+      stopTaTimer();
+      document.getElementById('ta-header').classList.add('hidden');
+      document.getElementById('ta-bomb-overlay').classList.add('hidden');
+      showSection('home');
     }
   }
 
   // ==============================================================
-  // TIMER
+  // STANDARD TIMER  (exam mode)
   // ==============================================================
   function startTimer() {
     updateTimerDisplay();
@@ -1839,7 +2213,7 @@ const App = (() => {
       if (timeLeft <= 0) {
         stopTimer();
         showToast('Time is up! Submitting your answers...');
-        setTimeout(() => finishSession(), 1500);
+        setTimeout(() => finishSession(true), 1500);
       }
     }, 1000);
   }
@@ -1854,10 +2228,137 @@ const App = (() => {
   }
 
   // ==============================================================
+  // TIME ATTACK TIMER
+  // ==============================================================
+  function startTaTimer() {
+    taTimerInterval = setInterval(() => {
+      taTimeLeft--;
+      updateTaDisplay();
+      if (taTimeLeft <= 0) {
+        stopTaTimer();
+        triggerBombExplosion();
+      }
+    }, 1000);
+  }
+  function stopTaTimer() { if (taTimerInterval) { clearInterval(taTimerInterval); taTimerInterval = null; } }
+
+  function updateTaDisplay() {
+    const s = Math.max(0, taTimeLeft);
+    const m = Math.floor(s / 60), sec = s % 60;
+    document.getElementById('ta-clock').textContent = m + ':' + String(sec).padStart(2, '0');
+    document.getElementById('ta-streak-count').textContent = taStreak;
+    document.getElementById('ta-points-val').textContent = taPoints;
+
+    // Progress bar
+    const fill = document.getElementById('ta-bar-fill');
+    const pct = (s / TA_TOTAL_TIME) * 100;
+    fill.style.width = pct + '%';
+    fill.className = 'ta-bar-fill' + (s <= 10 ? ' danger' : s <= 25 ? ' warn' : '');
+
+    // Bomb icon ticking urgency at ≤ 5s
+    const bombIcon = document.getElementById('ta-bomb-icon');
+    if (s <= 5 && s > 0) {
+      bombIcon.classList.add('ticking');
+    } else {
+      bombIcon.classList.remove('ticking');
+    }
+
+    // Clock text colour
+    const clockEl = document.getElementById('ta-clock');
+    clockEl.style.color = s <= 5 ? '#7f0000' : s <= 15 ? '#b71c1c' : s <= 25 ? '#e65100' : '#b71c1c';
+  }
+
+  function triggerBombExplosion() {
+    // Show the overlay (still transparent / hidden text)
+    const overlay = document.getElementById('ta-bomb-overlay');
+    const bombEmoji = document.getElementById('ta-bomb-emoji');
+    const timesUp = document.getElementById('ta-times-up');
+    overlay.classList.remove('hidden');
+    // Phase 1: rapid shake for ~0.5s
+    bombEmoji.className = 'pre-explode';
+    timesUp.className = '';
+    setTimeout(() => {
+      // Phase 2: explosion pop + red overlay
+      overlay.classList.add('exploding');
+      bombEmoji.className = 'exploded';
+      timesUp.className = 'show';
+      // After 2s, navigate to results
+      setTimeout(() => endTaSession(), 2200);
+    }, 500);
+  }
+
+  function endTaSession() {
+    stopTaTimer();
+    document.getElementById('ta-header').classList.add('hidden');
+    document.getElementById('ta-bomb-overlay').classList.add('hidden');
+    timeTaken = Math.floor((Date.now() - sessionStartTime) / 1000);
+    showResults();
+  }
+
+  // ==============================================================
   // RESULTS
   // ==============================================================
   function showResults() {
     const total = sessionQuestions.length;
+    const answeredCount = sessionAnswers.filter(a => a != null).length;
+    score = sessionAnswers.filter(a => a && a.isCorrect).length;
+
+    // ── Time Attack results ────────────────────────────────────────
+    if (mode === 'time-attack') {
+      const circle = document.getElementById('score-circle');
+      circle.className = 'score-circle ' + (taPoints >= 60 ? 'score-pass' : taPoints >= 30 ? 'score-ok' : 'score-fail');
+      document.getElementById('score-pct').textContent = taPoints + ' pts';
+      document.getElementById('score-label').textContent = 'Time Attack Score';
+      document.getElementById('stat-correct').textContent = score;
+      document.getElementById('stat-wrong').textContent = answeredCount - score;
+      document.getElementById('stat-total').textContent = total;
+      document.getElementById('results-title').textContent = '💣 Time Attack Complete!';
+      const pfMsg = document.getElementById('pass-fail-msg');
+      pfMsg.textContent = taPoints >= 75 ? '🔥 Blazing! Unstoppable!' : taPoints >= 50 ? '⚡ Great run!' : taPoints >= 25 ? '💪 Not bad — try again!' : '💥 Blown up! Practice more!';
+      pfMsg.style.color = taPoints >= 50 ? 'var(--success)' : taPoints >= 25 ? 'var(--warning)' : 'var(--danger)';
+      const td = document.getElementById('time-taken-display');
+      const timeUsed = TA_TOTAL_TIME - taTimeLeft;
+      td.textContent = 'Time used: ' + timeUsed + 's of 90s · ' + (TA_TOTAL_TIME - taTimeLeft <= 0 ? 'Timer expired' : 'Finished early!');
+      td.classList.remove('hidden');
+
+      // Review list with explanations for Time Attack
+      const reviewList = document.getElementById('review-list');
+      reviewList.innerHTML = '';
+      sessionQuestions.forEach((q, i) => {
+        const a = sessionAnswers[i];
+        const item = document.createElement('div');
+        if (!a) {
+          item.className = 'review-item wrong';
+          item.innerHTML = '<div class="q-text">' + (i+1) + '. ' + escapeHtml(q.question) + '</div>' +
+            '<div class="answers"><span class="corr">✓ ' + escapeHtml(q.options[q.answer]) + '</span>' +
+            ' &nbsp;|&nbsp; <span class="wrong-ans">— Not reached</span></div>' +
+            '<div class="explanation-box" style="display:block;margin-top:8px"><strong>Explanation:</strong> ' + escapeHtml(q.explanation) + '</div>';
+        } else {
+          item.className = 'review-item ' + (a.isCorrect ? 'correct' : 'wrong');
+          item.innerHTML = '<div class="q-text">' + (i+1) + '. ' + escapeHtml(a.question) + '</div>' +
+            '<div class="answers"><span class="corr">✓ ' + escapeHtml(a.options[a.correct]) + '</span>' +
+            (!a.isCorrect ? ' &nbsp;|&nbsp; <span class="wrong-ans">✗ ' + escapeHtml(a.options[a.chosen]) + '</span>' : '') +
+            '</div>' +
+            '<div class="explanation-box" style="display:block;margin-top:8px"><strong>Explanation:</strong> ' + escapeHtml(q.explanation) + '</div>';
+        }
+        reviewList.appendChild(item);
+      });
+
+      // Save Time Attack score
+      const now = new Date();
+      const entry = {
+        username, mode: 'time-attack', score, total, pct: taPoints,
+        pass: taPoints >= 50, difficulty: 'challenging',
+        date: now.toLocaleDateString(),
+        time: now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        ts: now.getTime(), timeTaken: timeTaken || null, taPoints
+      };
+      saveScore(entry);
+      showSection('results');
+      return;
+    }
+
+    // ── Standard results (practice / exam) ─────────────────────────
     const pct = Math.round((score / total) * 100);
     const pass = mode === 'exam' ? pct >= 65 : pct >= 70;
     const circle = document.getElementById('score-circle');
@@ -1886,36 +2387,40 @@ const App = (() => {
       document.getElementById('time-taken-display').classList.add('hidden');
     }
 
-    // Review list
+    // Review list — iterate all session questions in order
     const reviewList = document.getElementById('review-list');
     reviewList.innerHTML = '';
-    sessionAnswers.forEach((a, i) => {
+    sessionQuestions.forEach((q, i) => {
+      const a = sessionAnswers[i];
       const item = document.createElement('div');
-      item.className = 'review-item ' + (a.isCorrect ? 'correct' : 'wrong');
-      item.innerHTML = '<div class="q-text">' + (i+1) + '. ' + escapeHtml(a.question) + '</div>' +
-        '<div class="answers"><span class="corr">✓ ' + escapeHtml(a.options[a.correct]) + '</span>' +
-        (!a.isCorrect ? ' &nbsp;|&nbsp; <span class="wrong-ans">✗ ' + escapeHtml(a.options[a.chosen]) + '</span>' : '') +
-        '</div>';
+      if (!a) {
+        item.className = 'review-item wrong';
+        item.innerHTML = '<div class="q-text">' + (i+1) + '. ' + escapeHtml(q.question) + '</div>' +
+          '<div class="answers"><span class="corr">✓ ' + escapeHtml(q.options[q.answer]) + '</span>' +
+          ' &nbsp;|&nbsp; <span class="wrong-ans">— Not answered</span>' +
+          '</div>';
+      } else {
+        item.className = 'review-item ' + (a.isCorrect ? 'correct' : 'wrong');
+        item.innerHTML = '<div class="q-text">' + (i+1) + '. ' + escapeHtml(a.question) + '</div>' +
+          '<div class="answers"><span class="corr">✓ ' + escapeHtml(a.options[a.correct]) + '</span>' +
+          (!a.isCorrect ? ' &nbsp;|&nbsp; <span class="wrong-ans">✗ ' + escapeHtml(a.options[a.chosen]) + '</span>' : '') +
+          '</div>';
+      }
       reviewList.appendChild(item);
     });
 
     // Save score — store ISO timestamp for period filtering
     const now = new Date();
     const entry = {
-      username,
-      mode,
-      score,
-      total,
-      pct,
-      pass,
+      username, mode, score, total, pct, pass,
       difficulty: mode === 'practice' ? difficulty : 'exam',
       date: now.toLocaleDateString(),
       time: now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      ts: now.getTime(), // millisecond timestamp for period filtering
-      timeTaken: timeTaken || null   // record for both practice and exam
+      ts: now.getTime(),
+      timeTaken: timeTaken || null
     };
-    saveScore(entry);                  // fire-and-forget — don't block showing results
-    checkAndUpdateRecords(entry);      // fire-and-forget — check/update practice records
+    saveScore(entry);
+    checkAndUpdateRecords(entry);
     showSection('results');
   }
 
@@ -1924,8 +2429,9 @@ const App = (() => {
   // ==============================================================
   function setLbMode(m) {
     lbMode = m;
-    ['practice','exam','following'].forEach(t => {
-      document.getElementById('lb-tab-' + t).classList.toggle('active', t === m);
+    ['practice','exam','time-attack','following'].forEach(t => {
+      const el = document.getElementById('lb-tab-' + t);
+      if (el) el.classList.toggle('active', t === m);
     });
     // Show/hide difficulty + sort tabs (only for practice), period row (not for following)
     document.getElementById('lb-diff-tabs').style.display = m === 'practice' ? 'flex' : 'none';
@@ -1997,8 +2503,12 @@ const App = (() => {
       }
     }
 
-    // Sort: best % first → best score → fastest time as tiebreaker
-    lb = lb.sort((a, b) => b.pct - a.pct || b.score - a.score || (a.timeTaken && b.timeTaken ? a.timeTaken - b.timeTaken : 0));
+    // Sort: Time Attack by taPoints desc; others by % desc → score → fastest time
+    if (lbMode === 'time-attack') {
+      lb = lb.sort((a, b) => (b.taPoints || b.pct || 0) - (a.taPoints || a.pct || 0) || b.score - a.score);
+    } else {
+      lb = lb.sort((a, b) => b.pct - a.pct || b.score - a.score || (a.timeTaken && b.timeTaken ? a.timeTaken - b.timeTaken : 0));
+    }
 
     // Deduplicate: keep best entry per user (per difficulty when viewing all difficulties)
     const seen = {};
@@ -2010,7 +2520,7 @@ const App = (() => {
     });
 
     const periodLabel = { all: 'All Time', daily: 'Today', weekly: 'This Week', monthly: 'This Month' }[lbPeriod];
-    const modeLabel = lbMode === 'exam' ? '🎯 Exam' : lbMode === 'following' ? '👥 Following' : '📝 Practice';
+    const modeLabel = lbMode === 'exam' ? '🎯 Exam' : lbMode === 'following' ? '👥 Following' : lbMode === 'time-attack' ? '💣 Time Attack' : '📝 Practice';
     const diffLabel = lbMode === 'practice' && lbDiff !== 'all' ? ' · ' + lbDiff.charAt(0).toUpperCase() + lbDiff.slice(1) : '';
 
     if (ranked.length === 0) {
@@ -2027,12 +2537,12 @@ const App = (() => {
     let html = '<p style="font-size:0.8rem;color:var(--muted);margin-bottom:12px">' + modeLabel + subLabel + ' · ' + top.length + ' players</p>';
     html += '<div style="overflow-x:auto"><table class="lb-table"><thead><tr><th>Rank</th><th>Player</th><th>Score</th>';
     if (lbMode === 'practice') html += '<th>Difficulty</th><th>⏱ Time</th>';
+    if (lbMode === 'time-attack') html += '<th>💣 Points</th><th>Correct</th>';
     html += '<th>Date</th><th></th></tr></thead><tbody>';
 
     top.forEach((entry, i) => {
       const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : (i + 1);
       const isMe = entry.username === username;
-      const badgeCls = entry.pct >= 75 ? 'pass' : entry.pct >= 65 ? 'ok' : 'fail';
       const userProfile = users[entry.username] || {};
       const streak = getStreakCached(entry.username);
       const hasFlame = streak >= 3;
@@ -2056,23 +2566,30 @@ const App = (() => {
           ? '<button class="follow-btn is-following" onclick="App.unfollowUser(\'' + escapeHtml(entry.username) + '\')" title="Unfollow">Following ✓</button>'
           : '<button class="follow-btn not-following" onclick="App.followUser(\'' + escapeHtml(entry.username) + '\')" title="Follow">Follow +</button>';
 
-      // Time cell
-      let timeHtml = '—';
-      if (entry.timeTaken != null && entry.timeTaken > 0) {
-        const mm = Math.floor(entry.timeTaken / 60), ss = entry.timeTaken % 60;
-        const timeStr = mm + 'm ' + String(ss).padStart(2, '0') + 's';
-        timeHtml = '<span style="color:var(--muted)">' + timeStr + '</span>';
-      }
-
       html += '<tr' + (isMe ? ' class="highlight"' : '') + '>';
       html += '<td><span class="rank-medal">' + medal + '</span></td>';
       html += '<td style="display:flex;align-items:center;gap:8px;min-width:140px">' + avatarHtml + '<span>' + escapeHtml(entry.username) + streakHtml + (isMe ? ' <span style="font-size:0.72rem;color:var(--accent)">◀ You</span>' : '') + '</span></td>';
-      html += '<td><span class="score-badge ' + badgeCls + '">' + entry.pct + '%</span> <span style="font-size:0.8rem;color:var(--muted)">(' + entry.score + '/' + entry.total + ')</span></td>';
-      if (lbMode === 'practice') {
-        const dBadge = entry.difficulty && entry.difficulty !== 'all' ? entry.difficulty : 'mixed';
-        html += '<td style="font-size:0.8rem;text-transform:capitalize">' + dBadge + '</td>';
-        html += '<td style="font-size:0.82rem">' + timeHtml + '</td>';
+
+      if (lbMode === 'time-attack') {
+        // Score column: show % equivalent for shared columns
+        const badgeCls = (entry.taPoints || 0) >= 75 ? 'pass' : (entry.taPoints || 0) >= 40 ? 'ok' : 'fail';
+        html += '<td><span class="score-badge ' + badgeCls + '">' + (entry.taPoints || entry.pct || 0) + ' pts</span></td>';
+        html += '<td style="font-size:0.82rem;font-weight:700;color:var(--success)">' + (entry.score || 0) + '/' + (entry.total || 20) + '</td>';
+      } else {
+        const badgeCls = entry.pct >= 75 ? 'pass' : entry.pct >= 65 ? 'ok' : 'fail';
+        html += '<td><span class="score-badge ' + badgeCls + '">' + entry.pct + '%</span> <span style="font-size:0.8rem;color:var(--muted)">(' + entry.score + '/' + entry.total + ')</span></td>';
+        if (lbMode === 'practice') {
+          const dBadge = entry.difficulty && entry.difficulty !== 'all' ? entry.difficulty : 'mixed';
+          html += '<td style="font-size:0.8rem;text-transform:capitalize">' + dBadge + '</td>';
+          let timeHtml = '—';
+          if (entry.timeTaken != null && entry.timeTaken > 0) {
+            const mm = Math.floor(entry.timeTaken / 60), ss = entry.timeTaken % 60;
+            timeHtml = '<span style="color:var(--muted)">' + mm + 'm ' + String(ss).padStart(2,'0') + 's</span>';
+          }
+          html += '<td style="font-size:0.82rem">' + timeHtml + '</td>';
+        }
       }
+
       html += '<td style="font-size:0.8rem;color:var(--muted)">' + entry.date + '</td>';
       html += '<td>' + followBtn + '</td>';
       html += '</tr>';
@@ -2156,8 +2673,8 @@ const App = (() => {
   return {
     handleLogin, cancelVerify, signOut,
     showForgotFlow, cancelForgot, submitForgot,
-    showSection, selectMode, setDiff, startSession,
-    selectAnswer, nextQuestion, finishSession, confirmQuit,
+    showSection, selectMode, setDiff, setBank, startSession,
+    selectAnswer, selectAnswerTA, nextQuestion, prevQuestion, finishSession, confirmQuit,
     setLbMode, setLbPeriod, setLbDiff,
     followUser, unfollowUser,
     closeBanner,
