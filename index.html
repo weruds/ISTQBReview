@@ -1489,11 +1489,17 @@ const App = (() => {
     renderSidebarRecords(); // fire-and-forget
   }
 
+  // Returns true if a leaderboard entry belongs to the currently active bank.
+  // Legacy entries (no bank field) are treated as FL.
+  function inActiveBank(e) {
+    return activeBank === 'at' ? e.bank === 'at' : (!e.bank || e.bank === 'fl');
+  }
+
   async function renderSidebarStats() {
     const el = document.getElementById('sidebar-stats');
     if (!el) return;
     const all = await loadLB();
-    const mine = all.filter(e => e.username === username);
+    const mine = all.filter(e => e.username === username && inActiveBank(e));
     const practiceSessions = mine.filter(e => e.mode === 'practice');
     const examSessions     = mine.filter(e => e.mode === 'exam');
     const bestExam   = examSessions.length ? Math.max(...examSessions.map(e => e.pct)) : null;
@@ -1522,7 +1528,7 @@ const App = (() => {
     const el = document.getElementById('sidebar-lb');
     if (!el) return;
     const all = await loadLB();
-    let lb = all.filter(e => e.mode === _sbLbMode).sort((a,b) => b.pct - a.pct || b.score - a.score);
+    let lb = all.filter(e => e.mode === _sbLbMode && inActiveBank(e)).sort((a,b) => b.pct - a.pct || b.score - a.score);
     // deduplicate
     const seen = {}, ranked = [];
     lb.forEach(e => { if (!seen[e.username]) { seen[e.username] = true; ranked.push(e); } });
@@ -1545,7 +1551,7 @@ const App = (() => {
     const el = document.getElementById('sidebar-records');
     if (!el) return;
     const all = await loadLB();
-    const mine = all.filter(e => e.username === username && e.mode === 'practice');
+    const mine = all.filter(e => e.username === username && e.mode === 'practice' && inActiveBank(e));
     function fmtT(s) { return Math.floor(s/60)+'m'+String(s%60).padStart(2,'0')+'s'; }
     const highest = mine.length
       ? mine.reduce((b, e) => (!b || e.pct > b.pct || (e.pct === b.pct && e.score > b.score)) ? e : b, null)
@@ -1658,9 +1664,9 @@ const App = (() => {
     const body = document.getElementById('records-body');
     body.innerHTML = '<div style="color:var(--muted);font-size:0.88rem">Loading…</div>';
 
-    // Load only the current user's own practice sessions
+    // Load only the current user's own practice sessions for the active bank
     const all = await loadLB();
-    const mine = all.filter(e => e.username === username && e.mode === 'practice');
+    const mine = all.filter(e => e.username === username && e.mode === 'practice' && inActiveBank(e));
 
     function fmtTime(sec) {
       const m = Math.floor(sec / 60), s = sec % 60;
@@ -1728,10 +1734,10 @@ const App = (() => {
     const badge = document.getElementById('prep-badge');
     body.innerHTML = '<div style="color:var(--muted);font-size:0.88rem">Loading…</div>';
 
-    // Fetch only this user's exam sessions from leaderboard collection (fast, no answers)
+    // Fetch only this user's exam sessions for the active bank
     let all = await loadLB();
     const exams = all
-      .filter(e => e.username === username && e.mode === 'exam')
+      .filter(e => e.username === username && e.mode === 'exam' && inActiveBank(e))
       .sort((a, b) => a.ts - b.ts); // oldest → newest
 
     if (exams.length === 0) {
@@ -1901,6 +1907,16 @@ const App = (() => {
     const atSel2 = document.getElementById('chapter-filter-agile');
     if (flSel2) flSel2.value = 'all';
     if (atSel2) atSel2.value = 'all';
+    // Refresh all home-screen widgets to show data for the new bank
+    if (!document.getElementById('section-home').classList.contains('hidden')) {
+      renderRecords();
+      renderPreparedness();
+      renderSidebar();
+    }
+    // Refresh leaderboard if currently visible
+    if (!document.getElementById('section-leaderboard').classList.contains('hidden')) {
+      renderLeaderboard();
+    }
   }
 
   // ==============================================================
@@ -2329,6 +2345,7 @@ const App = (() => {
       const now = new Date();
       const entry = {
         username, mode: 'time-attack', score, total, pct: taPoints,
+        bank: activeBank,
         pass: taPoints >= 50, difficulty: 'challenging',
         date: now.toLocaleDateString(),
         time: now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
@@ -2398,6 +2415,7 @@ const App = (() => {
     const now = new Date();
     const entry = {
       username, mode, score, total, pct, pass,
+      bank: activeBank,
       difficulty: mode === 'practice' ? difficulty : 'exam',
       date: now.toLocaleDateString(),
       time: now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
@@ -2467,7 +2485,7 @@ const App = (() => {
     const [allLb, users, following] = await Promise.all([loadLB(), loadUsers(), loadFollowing()]);
     Object.assign(_cachedUsers, users);
 
-    let lb = allLb;
+    let lb = allLb.filter(inActiveBank);
 
     if (lbMode === 'following') {
       // Show best score per followed user across all modes
