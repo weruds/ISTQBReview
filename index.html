@@ -1964,6 +1964,18 @@ const App = (() => {
       return;
     }
     sessionQuestions = shuffle([...pool]).slice(0, count);
+    // Shuffle options for each question so the correct answer isn't always B
+    sessionQuestions = sessionQuestions.map(q => {
+      const indices = [0, 1, 2, 3];
+      for (let i = indices.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [indices[i], indices[j]] = [indices[j], indices[i]];
+      }
+      return Object.assign({}, q, {
+        _opts: indices.map(i => q.options[i]),
+        _ans:  indices.indexOf(q.answer)
+      });
+    });
     currentIndex = 0;
     score = 0;
     answered = false;
@@ -2027,7 +2039,7 @@ const App = (() => {
       document.getElementById('btn-back').classList.add('hidden');
       const optList = document.getElementById('options-list');
       optList.innerHTML = '';
-      q.options.forEach((opt, i) => {
+      q._opts.forEach((opt, i) => {
         const btn = document.createElement('button');
         btn.className = 'option-btn';
         btn.textContent = opt;
@@ -2049,7 +2061,7 @@ const App = (() => {
 
     const optList = document.getElementById('options-list');
     optList.innerHTML = '';
-    q.options.forEach((opt, i) => {
+    q._opts.forEach((opt, i) => {
       const btn = document.createElement('button');
       btn.className = 'option-btn';
       btn.textContent = opt;
@@ -2076,18 +2088,18 @@ const App = (() => {
     if (answered) return;
     answered = true;
     const q = sessionQuestions[currentIndex];
-    const isCorrect = chosen === q.answer;
+    const isCorrect = chosen === q._ans;
     const buttons = document.querySelectorAll('.option-btn');
 
     // Lock all buttons
     buttons.forEach((btn, i) => {
       btn.disabled = true;
-      if (i === q.answer) btn.classList.add('ta-correct');
+      if (i === q._ans) btn.classList.add('ta-correct');
       if (i === chosen && !isCorrect) btn.classList.add('ta-wrong');
     });
 
     // Record answer
-    sessionAnswers[currentIndex] = { qId: q.id, question: q.question, chosen, correct: q.answer, isCorrect, options: q.options };
+    sessionAnswers[currentIndex] = { qId: q.id, question: q.question, chosen, correct: q._ans, isCorrect, options: q._opts };
 
     if (isCorrect) {
       taStreak++;
@@ -2157,9 +2169,9 @@ const App = (() => {
   function commitAnswer() {
     if (pendingChoice === null) return false;
     const q = sessionQuestions[currentIndex];
-    const isCorrect = pendingChoice === q.answer;
+    const isCorrect = pendingChoice === q._ans;
     // Replace if already committed (user changed answer via Back)
-    sessionAnswers[currentIndex] = { qId: q.id, question: q.question, chosen: pendingChoice, correct: q.answer, isCorrect, options: q.options };
+    sessionAnswers[currentIndex] = { qId: q.id, question: q.question, chosen: pendingChoice, correct: q._ans, isCorrect, options: q._opts };
     return true;
   }
 
@@ -2330,7 +2342,7 @@ const App = (() => {
         if (!a) {
           item.className = 'review-item wrong';
           item.innerHTML = '<div class="q-text">' + (i+1) + '. ' + escapeHtml(q.question) + '</div>' +
-            '<div class="answers"><span class="corr">✓ ' + escapeHtml(q.options[q.answer]) + '</span>' +
+            '<div class="answers"><span class="corr">✓ ' + escapeHtml(q._opts[q._ans]) + '</span>' +
             ' &nbsp;|&nbsp; <span class="wrong-ans">— Not reached</span></div>' +
             '<div class="explanation-box" style="display:block;margin-top:8px"><strong>Explanation:</strong> ' + escapeHtml(q.explanation) + '</div>';
         } else {
@@ -2396,7 +2408,7 @@ const App = (() => {
       if (!a) {
         item.className = 'review-item wrong';
         item.innerHTML = '<div class="q-text">' + (i+1) + '. ' + escapeHtml(q.question) + '</div>' +
-          '<div class="answers"><span class="corr">✓ ' + escapeHtml(q.options[q.answer]) + '</span>' +
+          '<div class="answers"><span class="corr">✓ ' + escapeHtml(q._opts[q._ans]) + '</span>' +
           ' &nbsp;|&nbsp; <span class="wrong-ans">— Not answered</span>' +
           '</div>';
       } else {
