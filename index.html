@@ -74,6 +74,7 @@
     --medium: #e65100;
     --hard: #b71c1c;
     --extreme: #4a148c;
+    --bottom-nav-h: 60px;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: -apple-system, 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
@@ -95,48 +96,114 @@
     .container { max-width: 100%; padding: 20px 14px; }
     header h1 { font-size: 1.1rem; }
   }
-  /* Tablet portrait / large phone (540–767px) */
+  /* Tablet portrait / large phone (540–767px) — bottom nav starts here */
   @media (max-width: 767px) {
     html { font-size: 15px; }
-    .container { max-width: 100%; padding: 16px 12px; }
-    header { padding: 12px 16px; }
-    header h1 { font-size: 1rem; }
-    .card { padding: 20px 16px; }
-    .username-card { padding: 36px 24px; }
+    body { padding-bottom: var(--bottom-nav-h); }
+    .container { max-width: 100%; padding: 14px 12px; }
+    header { padding: 10px 14px; }
+    header h1 { font-size: 0.98rem; }
+    .card { padding: 18px 14px; }
+    .username-card { padding: 32px 22px; }
     .results-stats { grid-template-columns: repeat(3,1fr); gap: 8px; }
     .lb-controls { flex-direction: column; align-items: flex-start; }
-    .stats-bar { grid-template-columns: 1fr 1fr; }
+    /* Hide the in-app top nav on mobile — replaced by bottom nav */
+    #main-nav { display: none; }
+    /* Show mobile bank switcher in header */
+    #mobile-bank-wrap { display: flex !important; }
   }
   /* Mobile (max 539px) */
   @media (max-width: 539px) {
     html { font-size: 14px; }
-    header { padding: 10px 14px; flex-wrap: wrap; gap: 8px; }
-    header h1 { font-size: 0.95rem; }
-    .card { padding: 16px 14px; border-radius: 10px; }
-    .username-card { padding: 28px 18px; border-radius: 12px; max-width: 100%; width: 95%; }
-    .username-card h1 { font-size: 1.5rem; }
-    .btn-lg { padding: 12px 20px; font-size: 0.95rem; }
+    header { padding: 9px 12px; }
+    header h1 { font-size: 0.9rem; }
+    .card { padding: 14px 12px; border-radius: 10px; }
+    .username-card { padding: 26px 16px; border-radius: 12px; max-width: 100%; width: 98%; }
+    .username-card h1 { font-size: 1.4rem; }
+    .btn-lg { padding: 12px 18px; font-size: 0.95rem; }
     .mode-grid { grid-template-columns: 1fr; }
     .results-stats { grid-template-columns: 1fr 1fr 1fr; gap: 6px; }
     .stat-box .val { font-size: 1.3rem; }
-    .quiz-info { flex-wrap: wrap; gap: 6px; }
+    .quiz-info { flex-wrap: wrap; gap: 5px; }
     .question-text { font-size: 1rem; }
-    .option-btn { padding: 12px 14px; font-size: 0.9rem; }
+    .option-btn { padding: 13px 14px; font-size: 0.9rem; min-height: 52px; }
     .lb-controls { flex-direction: column; align-items: flex-start; gap: 8px; }
     .lb-period-tabs { gap: 4px; }
     .lb-period-tab, .lb-tab { padding: 6px 10px; font-size: 0.78rem; }
     .score-circle { width: 120px; height: 120px; }
     .score-circle .score-pct { font-size: 2rem; }
-    .nav-menu { gap: 6px; }
-    .nav-item { padding: 7px 12px; font-size: 0.82rem; }
     .diff-grid { gap: 6px; }
-    .diff-btn { padding: 8px 14px; font-size: 0.82rem; }
-    .user-badge-name { display: none; } /* show avatar only on very small screens */
+    .diff-btn { padding: 8px 12px; font-size: 0.82rem; }
+    .user-badge-name { display: none; }
+    .quiz-nav { margin-top: 16px; }
+    .quiz-nav .btn { padding: 11px 16px; font-size: 0.88rem; }
+    .review-list { max-height: none; }
   }
   /* Very small phones (max 380px) */
   @media (max-width: 380px) {
     html { font-size: 13px; }
-    .username-card { padding: 22px 14px; }
+    .username-card { padding: 20px 12px; }
+    .option-btn { padding: 12px 12px; font-size: 0.88rem; }
+  }
+
+  /* ===== MOBILE BOTTOM NAV ===== */
+  #mobile-bottom-nav {
+    display: none; /* hidden on desktop — shown via media query */
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    height: var(--bottom-nav-h);
+    background: var(--primary);
+    z-index: 900;
+    border-top: 1px solid rgba(255,255,255,0.12);
+    align-items: stretch;
+  }
+  @media (max-width: 767px) {
+    #mobile-bottom-nav { display: flex; }
+  }
+  .mob-nav-btn {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    color: rgba(255,255,255,0.6);
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+    cursor: pointer;
+    border: none;
+    background: none;
+    padding: 6px 0;
+    transition: color 0.15s, background 0.15s;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .mob-nav-btn .mob-nav-icon { font-size: 1.3rem; line-height: 1; }
+  .mob-nav-btn.active { color: white; background: rgba(255,255,255,0.1); }
+  .mob-nav-btn:active { background: rgba(255,255,255,0.18); }
+
+  /* Mobile bank switcher inside header (shown only on mobile) */
+  #mobile-bank-wrap {
+    display: none;
+    gap: 5px;
+    align-items: center;
+  }
+  .mob-bank-btn {
+    padding: 4px 9px;
+    border-radius: 14px;
+    border: 1.5px solid rgba(255,255,255,0.4);
+    background: rgba(255,255,255,0.1);
+    color: rgba(255,255,255,0.7);
+    cursor: pointer;
+    font-size: 0.73rem;
+    font-weight: 700;
+    transition: all 0.2s;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .mob-bank-btn.active {
+    background: white;
+    color: var(--primary);
+    border-color: white;
   }
 
   /* ===== HEADER ===== */
@@ -184,8 +251,9 @@
   .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
 
   /* ===== LOGIN SCREEN ===== */
-  #screen-username { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #1a237e 0%, #283593 50%, #1565c0 100%); }
-  .username-card { background: white; border-radius: 16px; padding: 48px 40px; max-width: 500px; width: 90%; text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,0.3); }
+  #screen-username { min-height: 100vh; display: flex; align-items: flex-start; justify-content: center; background: linear-gradient(135deg, #1a237e 0%, #283593 50%, #1565c0 100%); padding: 24px 16px 40px; }
+  @media (min-width: 540px) { #screen-username { align-items: center; } }
+  .username-card { background: white; border-radius: 16px; padding: 48px 40px; max-width: 500px; width: 100%; text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,0.3); }
   .username-card .logo { font-size: 3rem; margin-bottom: 12px; }
   .username-card h1 { color: var(--primary); font-size: 1.8rem; margin-bottom: 6px; }
   .username-card p { color: var(--muted); margin-bottom: 28px; font-size: 0.95rem; }
@@ -309,13 +377,17 @@
   .lb-diff-tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 14px; }
   .lb-diff-tab { padding: 5px 12px; border-radius: 16px; cursor: pointer; font-size: 0.8rem; font-weight: 600; border: 2px solid var(--border); background: white; color: var(--muted); transition: all 0.2s; }
   .lb-diff-tab.active { background: var(--primary-light); color: white; border-color: var(--primary-light); }
-  .lb-table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+  .lb-table { width: 100%; border-collapse: collapse; font-size: 0.9rem; min-width: 520px; }
   .lb-table th { background: var(--primary); color: white; padding: 10px 14px; text-align: left; font-weight: 600; font-size: 0.82rem; }
   .lb-table th:first-child { border-radius: 8px 0 0 0; }
   .lb-table th:last-child { border-radius: 0 8px 0 0; }
   .lb-table td { padding: 10px 14px; border-bottom: 1px solid var(--border); vertical-align: middle; }
   .lb-table tr:hover td { background: #f5f5f5; }
   .lb-table tr.highlight td { background: #fffde7; font-weight: 700; }
+  @media (max-width: 539px) {
+    .lb-table { font-size: 0.8rem; min-width: 460px; }
+    .lb-table th, .lb-table td { padding: 8px 10px; }
+  }
   .rank-medal { font-size: 1.2rem; }
   .score-badge { display: inline-block; padding: 2px 10px; border-radius: 12px; font-size: 0.8rem; font-weight: 700; }
   .score-badge.pass { background: #e8f5e9; color: var(--success); }
@@ -391,6 +463,9 @@
   /* Toast */
   .toast { position: fixed; bottom: 24px; right: 24px; background: var(--primary); color: white; padding: 12px 20px; border-radius: 8px; font-size: 0.9rem; font-weight: 600; opacity: 0; transition: opacity 0.3s; z-index: 9999; max-width: 320px; }
   .toast.show { opacity: 1; }
+  @media (max-width: 767px) {
+    .toast { bottom: calc(var(--bottom-nav-h) + 10px); left: 12px; right: 12px; max-width: none; text-align: center; font-size: 0.88rem; }
+  }
 
   .divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; }
   .text-center { text-align: center; }
@@ -611,11 +686,28 @@
   </div>
 </div>
 
+<!-- ===== MOBILE BOTTOM NAVIGATION (≤767px) ===== -->
+<div id="mobile-bottom-nav">
+  <button class="mob-nav-btn active" id="mob-nav-home" onclick="App.showSection('home')">
+    <span class="mob-nav-icon">🏠</span>
+    <span>Home</span>
+  </button>
+  <button class="mob-nav-btn" id="mob-nav-leaderboard" onclick="App.showSection('leaderboard')">
+    <span class="mob-nav-icon">🏆</span>
+    <span>Leaderboard</span>
+  </button>
+</div>
+
 <!-- ===== MAIN APP ===== -->
 <div id="screen-main" class="hidden">
   <header>
     <h1 id="app-header-title">📋 ISTQB Foundation Level Reviewer</h1>
-    <div style="display:flex;align-items:center;gap:10px">
+    <div style="display:flex;align-items:center;gap:8px">
+      <!-- Mobile bank switcher (shown in header on mobile) -->
+      <div id="mobile-bank-wrap">
+        <button id="mob-bank-fl" class="mob-bank-btn active" onclick="App.setBank('fl')">FL</button>
+        <button id="mob-bank-at" class="mob-bank-btn" onclick="App.setBank('at')">AT</button>
+      </div>
       <div class="user-badge" onclick="App.openProfile()" title="Edit profile">
         <div class="header-avatar" id="header-avatar-wrap">👤</div>
         <span class="user-badge-name" id="header-username">User</span>
@@ -1449,16 +1541,33 @@ const App = (() => {
       document.getElementById('section-' + s).classList.add('hidden');
     });
     document.getElementById('section-' + sec).classList.remove('hidden');
+    // Sync desktop top nav
     document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
     if (sec === 'home') {
-      document.querySelector('[onclick*="\'home\'"]').classList.add('active');
+      const homeNavItem = document.querySelector('#main-nav [onclick*="\'home\'"]');
+      if (homeNavItem) homeNavItem.classList.add('active');
       renderRecords();      // fire-and-forget
       renderPreparedness(); // fire-and-forget
       renderSidebar();      // fire-and-forget
     }
     if (sec === 'leaderboard') {
-      document.querySelector('[onclick*="\'leaderboard\'"]').classList.add('active');
+      const lbNavItem = document.querySelector('#main-nav [onclick*="\'leaderboard\'"]');
+      if (lbNavItem) lbNavItem.classList.add('active');
       renderLeaderboard();
+    }
+    // Sync mobile bottom nav: show only on home/leaderboard, hide during quiz/results
+    const mobNav = document.getElementById('mobile-bottom-nav');
+    const mobHome = document.getElementById('mob-nav-home');
+    const mobLb   = document.getElementById('mob-nav-leaderboard');
+    if (mobNav) {
+      const inQuiz = (sec === 'quiz' || sec === 'results');
+      mobNav.style.display = inQuiz ? 'none' : '';
+      // Also remove bottom padding during quiz so quiz options aren't hidden
+      document.body.style.paddingBottom = inQuiz ? '0' : '';
+    }
+    if (mobHome && mobLb) {
+      mobHome.classList.toggle('active', sec === 'home');
+      mobLb.classList.toggle('active', sec === 'leaderboard');
     }
     if (sec === 'quiz' || sec === 'home') stopTimer();
   }
@@ -1891,7 +2000,7 @@ const App = (() => {
     if (appH) appH.textContent = isAt
       ? '🔷 ISTQB Agile Tester Reviewer'
       : '📋 ISTQB Foundation Level Reviewer';
-    // In-app nav bank toggle buttons
+    // In-app nav bank toggle buttons (desktop top nav)
     const ifl = document.getElementById('in-app-bank-fl');
     const iat = document.getElementById('in-app-bank-at');
     if (ifl && iat) {
@@ -1901,6 +2010,13 @@ const App = (() => {
       iat.style.background  = isAt ? '#1565c0'       : 'white';
       iat.style.color       = isAt ? 'white'         : 'var(--muted)';
       iat.style.borderColor = isAt ? '#1565c0'       : 'var(--border)';
+    }
+    // Mobile header bank buttons
+    const mfl = document.getElementById('mob-bank-fl');
+    const mat = document.getElementById('mob-bank-at');
+    if (mfl && mat) {
+      mfl.classList.toggle('active', !isAt);
+      mat.classList.toggle('active', isAt);
     }
     // Reset chapter filter to "All" when switching banks
     const flSel2 = document.getElementById('chapter-filter');
