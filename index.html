@@ -289,7 +289,7 @@
   .stat-box.correct .val { color: var(--success); }
   .stat-box.wrong .val { color: var(--danger); }
   .stat-box.total .val { color: var(--primary); }
-  .review-list { max-height: 400px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; padding-right: 4px; }
+  .review-list { max-height: 600px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; padding-right: 4px; }
   .review-item { border-radius: 8px; padding: 14px; border-left: 4px solid; }
   .review-item.correct { border-color: var(--success); background: #f1f8e9; }
   .review-item.wrong { border-color: var(--danger); background: #fce4ec; }
@@ -2146,23 +2146,12 @@ const App = (() => {
   // Tentatively select an answer — does NOT lock in or grade immediately
   function selectAnswer(chosen) {
     pendingChoice = chosen;
-    answered = false; // still editable
-
     const buttons = document.querySelectorAll('.option-btn');
-    // Clear any previous tentative highlight
     buttons.forEach(btn => btn.classList.remove('selected-pending'));
-    // Highlight the chosen option
     buttons[chosen].classList.add('selected-pending');
-
-    // Reveal Next/Finish button so user can proceed when ready
     const isLast = currentIndex === sessionQuestions.length - 1;
-    if (isLast) {
-      document.getElementById('btn-next').classList.add('hidden');
-      document.getElementById('btn-finish').classList.remove('hidden');
-    } else {
-      document.getElementById('btn-finish').classList.add('hidden');
-      document.getElementById('btn-next').classList.remove('hidden');
-    }
+    document.getElementById('btn-finish').classList.toggle('hidden', !isLast);
+    document.getElementById('btn-next').classList.toggle('hidden', isLast);
   }
 
   // Commit the pending answer for the current question, then advance
@@ -2339,17 +2328,18 @@ const App = (() => {
       sessionQuestions.forEach((q, i) => {
         const a = sessionAnswers[i];
         const item = document.createElement('div');
+        const optLabel = (opts, idx) => 'ABCD'[idx] + '. ' + opts[idx].replace(/^[A-D]\.\s*/, '');
         if (!a) {
           item.className = 'review-item wrong';
           item.innerHTML = '<div class="q-text">' + (i+1) + '. ' + escapeHtml(q.question) + '</div>' +
-            '<div class="answers"><span class="corr">✓ ' + escapeHtml(q._opts[q._ans]) + '</span>' +
+            '<div class="answers"><span class="corr">✓ ' + escapeHtml(optLabel(q._opts, q._ans)) + '</span>' +
             ' &nbsp;|&nbsp; <span class="wrong-ans">— Not reached</span></div>' +
             '<div class="explanation-box" style="display:block;margin-top:8px"><strong>Explanation:</strong> ' + escapeHtml(q.explanation) + '</div>';
         } else {
           item.className = 'review-item ' + (a.isCorrect ? 'correct' : 'wrong');
           item.innerHTML = '<div class="q-text">' + (i+1) + '. ' + escapeHtml(a.question) + '</div>' +
-            '<div class="answers"><span class="corr">✓ ' + escapeHtml(a.options[a.correct]) + '</span>' +
-            (!a.isCorrect ? ' &nbsp;|&nbsp; <span class="wrong-ans">✗ ' + escapeHtml(a.options[a.chosen]) + '</span>' : '') +
+            '<div class="answers"><span class="corr">✓ ' + escapeHtml(optLabel(a.options, a.correct)) + '</span>' +
+            (!a.isCorrect ? ' &nbsp;|&nbsp; <span class="wrong-ans">✗ ' + escapeHtml(optLabel(a.options, a.chosen)) + '</span>' : '') +
             '</div>' +
             '<div class="explanation-box" style="display:block;margin-top:8px"><strong>Explanation:</strong> ' + escapeHtml(q.explanation) + '</div>';
         }
@@ -2405,18 +2395,22 @@ const App = (() => {
     sessionQuestions.forEach((q, i) => {
       const a = sessionAnswers[i];
       const item = document.createElement('div');
+      // Helper: strip stale A./B./C./D. prefix and re-label by shuffled position
+      const optLabel = (opts, idx) => 'ABCD'[idx] + '. ' + opts[idx].replace(/^[A-D]\.\s*/, '');
       if (!a) {
         item.className = 'review-item wrong';
         item.innerHTML = '<div class="q-text">' + (i+1) + '. ' + escapeHtml(q.question) + '</div>' +
-          '<div class="answers"><span class="corr">✓ ' + escapeHtml(q._opts[q._ans]) + '</span>' +
+          '<div class="answers"><span class="corr">✓ ' + escapeHtml(optLabel(q._opts, q._ans)) + '</span>' +
           ' &nbsp;|&nbsp; <span class="wrong-ans">— Not answered</span>' +
-          '</div>';
+          '</div>' +
+          '<div class="explanation-box" style="display:block;margin-top:8px"><strong>Explanation:</strong> ' + escapeHtml(q.explanation) + '</div>';
       } else {
         item.className = 'review-item ' + (a.isCorrect ? 'correct' : 'wrong');
         item.innerHTML = '<div class="q-text">' + (i+1) + '. ' + escapeHtml(a.question) + '</div>' +
-          '<div class="answers"><span class="corr">✓ ' + escapeHtml(a.options[a.correct]) + '</span>' +
-          (!a.isCorrect ? ' &nbsp;|&nbsp; <span class="wrong-ans">✗ ' + escapeHtml(a.options[a.chosen]) + '</span>' : '') +
-          '</div>';
+          '<div class="answers"><span class="corr">✓ ' + escapeHtml(optLabel(a.options, a.correct)) + '</span>' +
+          (!a.isCorrect ? ' &nbsp;|&nbsp; <span class="wrong-ans">✗ ' + escapeHtml(optLabel(a.options, a.chosen)) + '</span>' : '') +
+          '</div>' +
+          '<div class="explanation-box" style="display:block;margin-top:8px"><strong>Explanation:</strong> ' + escapeHtml(q.explanation) + '</div>';
       }
       reviewList.appendChild(item);
     });
