@@ -2042,7 +2042,7 @@ const App = (() => {
       q._opts.forEach((opt, i) => {
         const btn = document.createElement('button');
         btn.className = 'option-btn';
-        btn.textContent = opt;
+        btn.textContent = 'ABCD'[i] + '. ' + opt.replace(/^[A-D]\.\s*/, '');
         btn.setAttribute('data-index', i);
         btn.onclick = () => selectAnswerTA(i);
         optList.appendChild(btn);
@@ -2064,7 +2064,7 @@ const App = (() => {
     q._opts.forEach((opt, i) => {
       const btn = document.createElement('button');
       btn.className = 'option-btn';
-      btn.textContent = opt;
+      btn.textContent = 'ABCD'[i] + '. ' + opt.replace(/^[A-D]\.\s*/, '');
       btn.setAttribute('data-index', i);
       btn.onclick = () => selectAnswer(i);
       // Restore tentative highlight if this option was previously chosen
