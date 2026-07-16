@@ -1192,41 +1192,9 @@ const App = (() => {
     const chips = document.getElementById('user-chips');
     chips.innerHTML = '';
 
-    if (names.length > 0) {
-      section.classList.remove('hidden');
-      divider.classList.remove('hidden');
-      names.forEach(name => {
-        const u = users[name];
-        const chip = document.createElement('div');
-        chip.className = 'user-chip';
-        chip.dataset.name = name;
-        chip.onclick = () => selectReturningUser(name);
-
-        const avWrap = document.createElement('div');
-        avWrap.className = 'chip-avatar';
-        if (u.avatar) {
-          const img = document.createElement('img');
-          img.src = u.avatar;
-          avWrap.appendChild(img);
-        } else {
-          avWrap.textContent = name.charAt(0).toUpperCase();
-        }
-        chip.appendChild(avWrap);
-        chip.appendChild(document.createTextNode(name));
-
-        const streak = getStreakCached(name);
-        if (streak >= 3) {
-          const fl = document.createElement('span');
-          fl.className = 'flame-emoji';
-          fl.textContent = '🔥';
-          chip.appendChild(fl);
-        }
-        chips.appendChild(chip);
-      });
-    } else {
-      section.classList.add('hidden');
-      divider.classList.add('hidden');
-    }
+    // User chips are intentionally not displayed (security — no usernames on login screen)
+    section.classList.add('hidden');
+    divider.classList.add('hidden');
   }
 
   let pendingVerifyName = null;
